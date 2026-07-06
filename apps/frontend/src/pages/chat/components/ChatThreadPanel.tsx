@@ -15,9 +15,11 @@ interface Props {
   loadingOlder: boolean;
   onLoadOlder: () => void;
   onBack?: () => void;
+  onReply?: (m: ChatMessage) => void;
+  onEdit?: (m: ChatMessage) => void;
 }
 
-export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingOlder, onLoadOlder, onBack }: Props) {
+export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingOlder, onLoadOlder, onBack, onReply, onEdit }: Props) {
   const peerId = conversation.peer_id;
   const online = useChatRealtimeStore((s) => s.isOnline(peerId));
   const peerTyping = useChatRealtimeStore((s) => s.peerTyping[conversation.id] === true);
@@ -90,7 +92,7 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
           return (
             <Fragment key={m.id}>
               {showSep && <div className="thread__daysep">{daySeparatorLabel(m.created_at)}</div>}
-              <MessageBubble message={m} own={own} isNewestOwn={m.id === newestOwnId} />
+              <MessageBubble message={m} own={own} isNewestOwn={m.id === newestOwnId} onReply={onReply} onEdit={onEdit} />
             </Fragment>
           );
         })}

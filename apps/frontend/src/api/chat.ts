@@ -39,11 +39,19 @@ export function getMessages(
     v1(chatEndpoints.messages(conversationId, opts)),
   ).then((d) => ({ items: d.items ?? [], cursor: d.cursor ?? null }));
 }
-export function sendText(conversationId: string, body: string, clientRequestId?: string): Promise<ChatMessage> {
+export function sendText(
+  conversationId: string,
+  body: string,
+  clientRequestId?: string,
+  replyToMessageId?: string,
+): Promise<ChatMessage> {
   return apiRequest(v1(chatEndpoints.sendMessage(conversationId)), {
     method: 'POST',
-    body: { body, client_request_id: clientRequestId },
+    body: { body, client_request_id: clientRequestId, reply_to_message_id: replyToMessageId },
   });
+}
+export function pinMessage(messageId: string): Promise<ChatMessage> {
+  return apiRequest(v1(chatEndpoints.pinMessage(messageId)), { method: 'POST' });
 }
 export function editMessage(messageId: string, body: string): Promise<ChatMessage> {
   return apiRequest(v1(chatEndpoints.editMessage(messageId)), { method: 'PATCH', body: { body } });

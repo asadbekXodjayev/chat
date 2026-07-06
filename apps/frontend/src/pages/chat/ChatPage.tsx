@@ -1,10 +1,10 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys, type ChatParticipant } from '@chat/contract';
+import { queryKeys, type ChatParticipant, type ChatMessage } from '@chat/contract';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQueries';
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
-import { sendText, getOrCreateConversation } from '../../api/chat';
+import { sendText, editMessage, getOrCreateConversation } from '../../api/chat';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -34,6 +34,9 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
   const sidebarWidth = useUiStore((s) => s.sidebarWidthPx);
   const rail = !isMobile && sidebarWidth < 96;
 
+  const [composerMode, setComposerMode] = useState<{ kind: 'reply' | 'edit'; message: ChatMessage } | null>(null);
+  useEffect(() => setComposerMode(null), [activeConversationId]);
+
   const active = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
     [conversations, activeConversationId],
@@ -54,12 +57,20 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
     setActiveConversation(conv.id);
   };
 
-  const handleSend = async (text: string) => {
+  const handleSubmit = async (text: string) => {
     if (!active) return;
+    if (composerMode?.kind === 'edit') {
+      const updated = await editMessage(composerMode.message.id, text);
+      qc.setQueryData(queryKeys.messages(active.id), (old: MessagesInfinite | undefined) => upsertMessage(old, updated));
+      setComposerMode(null);
+      return;
+    }
+    const replyToId = composerMode?.kind === 'reply' ? composerMode.message.id : undefined;
     // Server notifies only the PEER over WS; the sender seeds its own cache from the POST response.
-    const msg = await sendText(active.id, text, crypto.randomUUID());
+    const msg = await sendText(active.id, text, crypto.randomUUID(), replyToId);
     qc.setQueryData(queryKeys.messages(active.id), (old: MessagesInfinite | undefined) => upsertMessage(old, msg));
     void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
+    setComposerMode(null);
   };
 
   const logout = () => {
@@ -96,8 +107,16 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
                 loadingOlder={messagesQuery.isFetchingNextPage}
                 onLoadOlder={() => void messagesQuery.fetchNextPage()}
                 onBack={isMobile ? () => setActiveConversation(null) : undefined}
+                onReply={(m) => setComposerMode({ kind: 'reply', message: m })}
+                onEdit={(m) => setComposerMode({ kind: 'edit', message: m })}
               />
-              <ChatComposerPanel conversationId={active.id} onSend={handleSend} />
+              <ChatComposerPanel
+                conversationId={active.id}
+                onSend={handleSubmit}
+                replyTo={composerMode?.kind === 'reply' ? composerMode.message : null}
+                editing={composerMode?.kind === 'edit' ? composerMode.message : null}
+                onCancelMode={() => setComposerMode(null)}
+              />
             </>
           ) : (
             <div className="empty">

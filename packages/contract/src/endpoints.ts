@@ -47,6 +47,7 @@ export const chatEndpoints = {
   deleteMessage: (messageId: string) => `/chat/messages/${messageId}`,
   reactions: (messageId: string) => `/chat/messages/${messageId}/reactions`,
   reaction: (messageId: string, key: string) => `/chat/messages/${messageId}/reactions/${encodeURIComponent(key)}`,
+  pinMessage: (messageId: string) => `/chat/messages/${messageId}/pin`,
 
   media: (attachmentId: string) => `/chat/media/${attachmentId}`,
   file: (fileId: string) => `/chat/files/${fileId}`, // legacy alias of media

@@ -19,6 +19,9 @@ export interface MessageRow {
   read_by_a: boolean;
   read_by_b: boolean;
   client_request_id: string | null;
+  reply_to_message_id: string | null;
+  quote_text: string | null;
+  edited_at: Date | null;
 }
 
 /** Pure row → wire DTO, viewer-relative (read_by_me / read_by_peer per §6.3). */
@@ -37,6 +40,8 @@ export function mapMessageRow(row: MessageRow, requesterId: string, conv: Conver
     delivered_at: row.delivered_at ? toRfc3339Nano(row.delivered_at) : null,
     read_by_me: isA ? row.read_by_a : row.read_by_b,
     read_by_peer: isA ? row.read_by_b : row.read_by_a,
+    reply_to: row.reply_to_message_id ? { message_id: row.reply_to_message_id, quote_text: row.quote_text } : null,
+    edited_at: row.edited_at ? toRfc3339Nano(row.edited_at) : null,
   };
 }
 
@@ -45,6 +50,8 @@ export interface SendInput {
   body?: string | null;
   payload?: Record<string, unknown> | null;
   clientRequestId?: string | null;
+  replyToMessageId?: string | null;
+  quoteText?: string | null;
 }
 
 export const MessageService = {
@@ -63,8 +70,9 @@ export const MessageService = {
 
     const inserted = await query<MessageRow>(
       `INSERT INTO messages
-        (conversation_id, sender_id, type, body, payload, delivered_at, read_by_a, read_by_b, client_request_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (conversation_id, sender_id, type, body, payload, delivered_at, read_by_a, read_by_b, client_request_id,
+         reply_to_message_id, quote_text)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        ON CONFLICT (conversation_id, client_request_id) WHERE client_request_id IS NOT NULL DO NOTHING
        RETURNING *`,
       [
@@ -77,6 +85,8 @@ export const MessageService = {
         senderIsA, // sender has read own message
         !senderIsA,
         input.clientRequestId ?? null,
+        input.replyToMessageId ?? null,
+        input.quoteText ?? null,
       ],
     );
 
@@ -118,7 +128,7 @@ export const MessageService = {
   // §8.1 #11 — edit (text only), broadcast message.updated.
   async edit(row: MessageRow, conv: ConversationRow, body: string): Promise<ChatMessage> {
     const updated = await query<MessageRow>(
-      'UPDATE messages SET body = $1, updated_at = now() WHERE id = $2 RETURNING *',
+      'UPDATE messages SET body = $1, updated_at = now(), edited_at = now() WHERE id = $2 RETURNING *',
       [body, row.id],
     );
     const r = updated.rows[0]!;
@@ -136,6 +146,33 @@ export const MessageService = {
       data: { conversation_id: conv.id, message_id: row.id },
     });
     return { deleted: true };
+  },
+
+  /** Pinned message ids within a conversation (for the DTO is_pinned flag). */
+  async pinnedIds(conversationId: string, messageIds: string[]): Promise<Set<string>> {
+    if (messageIds.length === 0) return new Set();
+    const r = await query<{ message_id: string }>(
+      'SELECT message_id FROM message_pins WHERE conversation_id = $1 AND message_id = ANY($2)',
+      [conversationId, messageIds],
+    );
+    return new Set(r.rows.map((x) => x.message_id));
+  },
+
+  /** Toggle pin. Returns the new pinned state. */
+  async togglePin(conv: ConversationRow, messageId: string, userId: string): Promise<boolean> {
+    const existing = await query('SELECT 1 FROM message_pins WHERE conversation_id = $1 AND message_id = $2', [
+      conv.id,
+      messageId,
+    ]);
+    if (existing.rows.length > 0) {
+      await query('DELETE FROM message_pins WHERE conversation_id = $1 AND message_id = $2', [conv.id, messageId]);
+      return false;
+    }
+    await query(
+      'INSERT INTO message_pins (conversation_id, message_id, pinned_by) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING',
+      [conv.id, messageId, userId],
+    );
+    return true;
   },
 
   // §14.2 — history newest→oldest, keyset pagination by (created_at, id).

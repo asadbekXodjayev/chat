@@ -77,10 +77,15 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     });
     if (q.mark_read === '1') await ReceiptService.markConversationRead(conv, userId);
     const items = rows.map((r) => mapMessageRow(r, userId, conv));
-    const reactions = await ReactionService.aggregatesFor(items.map((m) => m.id), userId);
+    const ids = items.map((m) => m.id);
+    const [reactions, pinned] = await Promise.all([
+      ReactionService.aggregatesFor(ids, userId),
+      MessageService.pinnedIds(conv.id, ids),
+    ]);
     for (const m of items) {
       const rx = reactions.get(m.id);
       if (rx) m.reactions = rx;
+      if (pinned.has(m.id)) m.is_pinned = true;
     }
     return sendOk(reply, { items, cursor }, { language: req.language });
   });
@@ -90,12 +95,25 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     const userId = requireUserId(req);
     await rateLimit(userId, 'send', env.rlSendPerSec, 1);
     const conv = await loadConversationForMember((req.params as { id: string }).id, userId);
-    const body = (req.body ?? {}) as { body?: string; client_request_id?: string };
+    const body = (req.body ?? {}) as { body?: string; client_request_id?: string; reply_to_message_id?: string };
     if (!body.body || body.body.trim().length === 0) throw new ApiError(400, 'invalid_payload_detail');
+    if (body.body.length > 8192) throw new ApiError(400, 'invalid_payload_detail');
+    // Snapshot the replied-to message so the quote survives source edit/delete (§D12).
+    let replyToId: string | null = null;
+    let quoteText: string | null = null;
+    if (body.reply_to_message_id) {
+      const replied = await MessageService.getById(body.reply_to_message_id);
+      if (replied && replied.conversation_id === conv.id && !replied.deleted_at) {
+        replyToId = replied.id;
+        quoteText = (replied.body ?? '').trim().slice(0, 140) || `[${normalizeChatMessageType(replied.type)}]`;
+      }
+    }
     const msg = await MessageService.send(conv, userId, {
       type: 'text',
       body: body.body,
       clientRequestId: body.client_request_id ?? null,
+      replyToMessageId: replyToId,
+      quoteText,
     });
     return sendOk(reply, msg, { language: req.language });
   });
@@ -228,6 +246,24 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     if (!row) throw new ApiError(404, 'message_not_found');
     await loadConversationForMember(row.conversation_id, userId);
     return sendOk(reply, { reactions: await ReactionService.forMessage(row.id, userId) }, { language: req.language });
+  });
+
+  // #12c pin toggle (either party can pin/unpin in a DM). Realtime via message.updated.
+  app.post('/v1/chat/messages/:id/pin', async (req, reply) => {
+    const userId = requireUserId(req);
+    const row = await MessageService.getById((req.params as { id: string }).id);
+    if (!row || row.deleted_at) throw new ApiError(404, 'message_not_found');
+    const conv = await loadConversationForMember(row.conversation_id, userId);
+    const pinned = await MessageService.togglePin(conv, row.id, userId);
+    const build = async (viewerId: string) => {
+      const dto = mapMessageRow(row, viewerId, conv);
+      dto.is_pinned = pinned;
+      dto.reactions = await ReactionService.forMessage(row.id, viewerId);
+      return dto;
+    };
+    const peerId = ConversationService.peerOf(conv, userId);
+    if (peerId) await publishToUser(peerId, { type: 'message.updated', data: await build(peerId) });
+    return sendOk(reply, await build(userId), { language: req.language });
   });
 
   // #13 / #14 authenticated media stream (blob, not envelope)

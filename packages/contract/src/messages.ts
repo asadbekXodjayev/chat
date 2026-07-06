@@ -36,6 +36,13 @@ export interface ChatCallPayload {
 
 export type ChatMessagePayload = ChatMediaPayload | ChatLocationPayload | ChatCallPayload;
 
+// §D12 — a reply reference stored as a SNAPSHOT (survives source edit/delete).
+export interface ChatReplyRef {
+  message_id: string;
+  quote_text?: string | null;
+  sender_id?: string | null;
+}
+
 // §6.3 — the message row as it crosses the wire.
 export interface ChatMessage {
   id: string; // uuid
@@ -51,6 +58,9 @@ export interface ChatMessage {
   read_by_me: boolean; // current user has read this (peer's) message
   read_by_peer: boolean; // peer has read this (my) message
   reactions?: ChatReactionAggregate[]; // aggregated emoji/text reactions (§6.x)
+  reply_to?: ChatReplyRef | null; // quoted reply snapshot (§D12)
+  is_pinned?: boolean; // pinned in this conversation
+  edited_at?: string | null; // set when the message was edited
   /** CLIENT-ONLY optimistic marker — never sent by the server. */
   optimistic?: { localUrl: string };
 }
@@ -58,6 +68,8 @@ export interface ChatMessage {
 // ---- Request bodies (§8.1) ----
 export interface SendTextRequest {
   body: string;
+  reply_to_message_id?: string;
+  client_request_id?: string;
 }
 export interface SendMediaRefRequest {
   type: string; // MediaUploadType (server normalizes)
