@@ -58,6 +58,11 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
 
   const newestOwnId = [...messages].reverse().find((m) => m.sender_id === me.id && !m.deleted_at)?.id ?? null;
   const peer = conversation.peer;
+  const isGroup = conversation.type === 'group' || conversation.type === 'channel';
+  const headerName = isGroup ? conversation.title || 'Group' : peer?.name || peer?.phone || 'Unknown user';
+  const headerSubtitle = isGroup
+    ? `${conversation.member_count ?? 0} ${conversation.type === 'channel' ? 'subscribers' : 'members'}`
+    : subtitle;
 
   let lastDay = '';
 
@@ -69,29 +74,36 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
             <span aria-hidden>←</span>
           </button>
         )}
-        <Avatar name={peer?.name} phone={peer?.phone} online={online} size={40} />
+        <Avatar
+          name={isGroup ? headerName : peer?.name}
+          phone={isGroup ? undefined : peer?.phone}
+          online={isGroup ? undefined : online}
+          size={40}
+        />
         <div className="thread__peer">
-          <span className="thread__name">{peer?.name || peer?.phone || 'Unknown user'}</span>
-          <span className={`thread__subtitle ${peerTyping ? 'is-typing' : ''}`}>{subtitle}</span>
+          <span className="thread__name">{isGroup ? `${conversation.type === 'channel' ? '📢' : '👥'} ${headerName}` : headerName}</span>
+          <span className={`thread__subtitle ${!isGroup && peerTyping ? 'is-typing' : ''}`}>{headerSubtitle}</span>
         </div>
-        <div className="thread__actions">
-          <button
-            className="thread__act"
-            onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'audio')}
-            aria-label="Voice call"
-            type="button"
-          >
-            📞
-          </button>
-          <button
-            className="thread__act"
-            onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'video')}
-            aria-label="Video call"
-            type="button"
-          >
-            🎥
-          </button>
-        </div>
+        {!isGroup && (
+          <div className="thread__actions">
+            <button
+              className="thread__act"
+              onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'audio')}
+              aria-label="Voice call"
+              type="button"
+            >
+              📞
+            </button>
+            <button
+              className="thread__act"
+              onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'video')}
+              aria-label="Video call"
+              type="button"
+            >
+              🎥
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="thread__scroll" ref={scrollRef} onScroll={onScroll}>

@@ -27,6 +27,9 @@ export const chatEndpoints = {
 
   conversations: (limit = 100) => `/chat/conversations?limit=${limit}`,
   createConversation: () => `/chat/conversations`,
+  createGroup: () => `/chat/groups`,
+  createChannel: () => `/chat/channels`,
+  members: (conversationId: string) => `/chat/conversations/${conversationId}/members`,
   markRead: (conversationId: string) => `/chat/conversations/${conversationId}/read`,
   messages: (
     conversationId: string,

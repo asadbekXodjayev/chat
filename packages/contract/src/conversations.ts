@@ -12,6 +12,27 @@ export interface ChatParticipant {
   photo_url?: string | null;
 }
 
+export type ConversationType = 'dm' | 'group' | 'channel' | 'saved';
+export type MemberRole = 'owner' | 'admin' | 'member' | 'subscriber';
+
+export interface ConversationMember {
+  user_id: string;
+  role: string;
+  joined_at: string;
+  user: ChatParticipant;
+}
+
+export interface CreateGroupRequest {
+  title: string;
+  member_ids: string[];
+  description?: string;
+}
+export interface CreateChannelRequest {
+  title: string;
+  description?: string;
+  is_public?: boolean;
+}
+
 export interface ChatConversation {
   id: string;
   peer_id: string;
@@ -20,6 +41,11 @@ export interface ChatConversation {
   unread_count: number;
   created_at: string;
   updated_at: string;
+  type?: ConversationType;
+  title?: string | null;
+  member_count?: number;
+  my_role?: MemberRole;
+  can_post?: boolean;
   peer_has_photo?: boolean;
   peer_photo_url?: string | null;
   // Summary fields (server wire names in comments) — list previews without loading messages.

@@ -16,6 +16,11 @@ export function ConversationItem({
 }) {
   const online = useChatRealtimeStore((s) => s.isOnline(conversation.peer_id));
   const peer = conversation.peer;
+  const isGroup = conversation.type === 'group' || conversation.type === 'channel';
+  const groupIcon = conversation.type === 'channel' ? '📢' : '👥';
+  const title = isGroup
+    ? conversation.title || (conversation.type === 'channel' ? 'Channel' : 'Group')
+    : peer?.name || peer?.phone || 'Unknown user';
   const preview = conversationPreview(conversation, me.id);
   const time = conversation.summary_last_message_at ?? conversation.last_message?.created_at;
   const unread = conversation.unread_count;
@@ -24,10 +29,10 @@ export function ConversationItem({
 
   return (
     <button className={`convrow ${active ? 'is-active' : ''}`} role="listitem" onClick={onClick}>
-      <Avatar name={peer?.name} phone={peer?.phone} online={online} />
+      <Avatar name={isGroup ? title : peer?.name} phone={isGroup ? undefined : peer?.phone} online={isGroup ? undefined : online} />
       <div className="convrow__body">
         <div className="convrow__top">
-          <span className="convrow__name">{peer?.name || peer?.phone || 'Unknown user'}</span>
+          <span className="convrow__name">{isGroup ? `${groupIcon} ${title}` : title}</span>
           {time && <span className="convrow__time">{formatMessageTime(time)}</span>}
         </div>
         <div className="convrow__bottom">

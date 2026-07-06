@@ -11,13 +11,13 @@ import { ReceiptService } from '../services/receipts';
 import { PresenceService } from '../services/presence';
 import { MediaService } from '../services/media';
 import { ReactionService } from '../services/reactions';
-import { publishToUser } from '../ws/bus';
+import { publishToUser, publishToConversation } from '../ws/bus';
 import { redis } from '../redis/redis';
 
 async function loadConversationForMember(id: string, userId: string): Promise<ConversationRow> {
   const conv = await ConversationService.getById(id);
   if (!conv) throw new ApiError(404, 'conversation_not_found');
-  if (!ConversationService.isMember(conv, userId)) throw new ApiError(403, 'forbidden');
+  if (!(await ConversationService.isMemberOf(conv, userId))) throw new ApiError(403, 'forbidden');
   return conv;
 }
 
@@ -70,6 +70,40 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     if (!peer) throw new ApiError(400, 'invalid_payload_detail');
     const conv = await ConversationService.getOrCreate(userId, body.peer_id);
     return sendOk(reply, await ConversationService.toDTO(conv, userId), { language: req.language });
+  });
+
+  // #4b create group
+  app.post('/v1/chat/groups', async (req, reply) => {
+    const userId = requireUserId(req);
+    const body = (req.body ?? {}) as { title?: string; member_ids?: string[]; description?: string };
+    const title = (body.title ?? '').trim();
+    if (title.length < 1 || title.length > 128) throw new ApiError(400, 'invalid_payload_detail');
+    const memberIds = Array.isArray(body.member_ids)
+      ? body.member_ids.filter((x): x is string => typeof x === 'string').slice(0, 200)
+      : [];
+    const conv = await ConversationService.createGroup(userId, title, memberIds, { description: body.description ?? null });
+    await publishToConversation(conv.id, { type: 'conversation.updated', data: { conversation_id: conv.id } }, userId);
+    return sendOk(reply, await ConversationService.toDTO(conv, userId), { language: req.language });
+  });
+
+  // #4c create channel
+  app.post('/v1/chat/channels', async (req, reply) => {
+    const userId = requireUserId(req);
+    const body = (req.body ?? {}) as { title?: string; description?: string; is_public?: boolean };
+    const title = (body.title ?? '').trim();
+    if (title.length < 1 || title.length > 128) throw new ApiError(400, 'invalid_payload_detail');
+    const conv = await ConversationService.createChannel(userId, title, {
+      description: body.description ?? null,
+      isPublic: body.is_public === true,
+    });
+    return sendOk(reply, await ConversationService.toDTO(conv, userId), { language: req.language });
+  });
+
+  // #4d members
+  app.get('/v1/chat/conversations/:id/members', async (req, reply) => {
+    const userId = requireUserId(req);
+    const conv = await loadConversationForMember((req.params as { id: string }).id, userId);
+    return sendOk(reply, { members: await ConversationService.membersOf(conv.id) }, { language: req.language });
   });
 
   // #5 mark read

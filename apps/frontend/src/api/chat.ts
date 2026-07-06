@@ -28,6 +28,12 @@ export function listConversations(limit = 100): Promise<{ items?: ChatConversati
 export function getOrCreateConversation(peerId: string): Promise<ChatConversation> {
   return apiRequest(v1(chatEndpoints.createConversation()), { method: 'POST', body: { peer_id: peerId } });
 }
+export function createGroup(title: string, memberIds: string[], description?: string): Promise<ChatConversation> {
+  return apiRequest(v1(chatEndpoints.createGroup()), { method: 'POST', body: { title, member_ids: memberIds, description } });
+}
+export function createChannel(title: string, isPublic?: boolean, description?: string): Promise<ChatConversation> {
+  return apiRequest(v1(chatEndpoints.createChannel()), { method: 'POST', body: { title, is_public: isPublic, description } });
+}
 export function markConversationRead(conversationId: string): Promise<{ ok: boolean }> {
   return apiRequest(v1(chatEndpoints.markRead(conversationId)), { method: 'POST', body: {} });
 }

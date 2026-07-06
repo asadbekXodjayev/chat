@@ -19,9 +19,11 @@ interface Props {
   me: ChatParticipant;
   onOpenProfile: () => void;
   onLogout: () => void;
+  onNewGroup?: () => void;
+  onNewChannel?: () => void;
 }
 
-export function AppDrawer({ open, onClose, me, onOpenProfile, onLogout }: Props) {
+export function AppDrawer({ open, onClose, me, onOpenProfile, onLogout, onNewGroup, onNewChannel }: Props) {
   const openProfile = () => {
     onClose();
     onOpenProfile();
@@ -59,12 +61,23 @@ export function AppDrawer({ open, onClose, me, onOpenProfile, onLogout }: Props)
               <button className="drawer__item" onClick={openProfile} type="button">
                 <span aria-hidden>👤</span> Profile
               </button>
-              {ITEMS.map((it) => (
-                <button key={it.key} className="drawer__item" type="button" disabled={it.soon} title={it.soon ? 'Coming soon' : undefined}>
-                  <span aria-hidden>{it.icon}</span> {it.label}
-                  {it.soon && <span className="drawer__soon">soon</span>}
-                </button>
-              ))}
+              {ITEMS.map((it) => {
+                const handler = it.key === 'group' ? onNewGroup : it.key === 'channel' ? onNewChannel : undefined;
+                const enabled = !!handler;
+                return (
+                  <button
+                    key={it.key}
+                    className="drawer__item"
+                    type="button"
+                    disabled={!enabled}
+                    title={enabled ? undefined : 'Coming soon'}
+                    onClick={enabled ? () => { onClose(); handler!(); } : undefined}
+                  >
+                    <span aria-hidden>{it.icon}</span> {it.label}
+                    {!enabled && <span className="drawer__soon">soon</span>}
+                  </button>
+                );
+              })}
             </nav>
 
             <div className="drawer__foot">

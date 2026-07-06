@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys, type ChatParticipant, type ChatMessage } from '@chat/contract';
+import { queryKeys, type ChatParticipant, type ChatMessage, type ChatConversation } from '@chat/contract';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQueries';
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
@@ -9,6 +9,7 @@ import { ChatVideoNoteRecorder } from './components/ChatVideoNoteRecorder';
 import { CallModal } from '../../components/CallModal';
 import { CallController } from '../../lib/callController';
 import { Toasts } from '../../components/Toasts';
+import { NewGroupModal } from '../../components/NewGroupModal';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -40,6 +41,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
 
   const [composerMode, setComposerMode] = useState<{ kind: 'reply' | 'edit'; message: ChatMessage } | null>(null);
   const [circleOpen, setCircleOpen] = useState(false);
+  const [newModal, setNewModal] = useState<'group' | 'channel' | null>(null);
   useEffect(() => setComposerMode(null), [activeConversationId]);
   useEffect(() => CallController.init(), []); // subscribe the call engine to inbound call frames
 
@@ -157,6 +159,8 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
         me={me}
         onOpenProfile={() => setProfileOpen(true)}
         onLogout={logout}
+        onNewGroup={() => setNewModal('group')}
+        onNewChannel={() => setNewModal('channel')}
       />
       <ProfilePage open={profileOpen} onClose={() => setProfileOpen(false)} me={me} onUpdated={setMe} />
       {circleOpen && active && (
@@ -164,6 +168,21 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
       )}
       <CallModal />
       <Toasts onOpen={setActiveConversation} />
+      {newModal && (
+        <NewGroupModal
+          kind={newModal}
+          conversations={conversations}
+          onClose={() => setNewModal(null)}
+          onCreated={(conv) => {
+            qc.setQueryData(queryKeys.conversations(), (old: ChatConversation[] | undefined) => {
+              const list = old ?? [];
+              return list.some((c) => c.id === conv.id) ? list : [conv, ...list];
+            });
+            setActiveConversation(conv.id);
+            setNewModal(null);
+          }}
+        />
+      )}
     </div>
   );
 }

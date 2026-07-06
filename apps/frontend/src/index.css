@@ -580,6 +580,16 @@ textarea {
   gap: 10px;
   justify-content: flex-end;
 }
+.switchrow { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text); }
+.memberpick { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
+.memberpick__row {
+  display: flex; align-items: center; gap: 10px; border: none; background: transparent;
+  padding: 8px 6px; border-radius: 10px; color: var(--text); text-align: left;
+}
+.memberpick__row:hover { background: var(--surface-2); }
+.memberpick__row.is-sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.memberpick__name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.memberpick__check { color: var(--accent); font-weight: 700; }
 .sidebar__search {
   position: relative;
   padding: 12px;
