@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ChatParticipant } from '@chat/contract';
 import { requestCode, verifyCode, register, usernameAvailable } from '../api/auth';
+import { ApiError } from '../lib/apiClient';
 
 type Step = 'phone' | 'code' | 'register';
 
@@ -53,7 +54,17 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (u: ChatParticipant) =
       setDevNote(res.delivered === false);
       setCode('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send code');
+      // Throttled (a code was requested recently)? Still let them enter the code they may already
+      // have — or the test code 136092, which verifies without a fresh request.
+      if (err instanceof ApiError && err.status === 429) {
+        setStep('code');
+        setDevNote(true);
+        setResendIn(60);
+        setCode('');
+        setError(null);
+      } else {
+        setError(err instanceof Error ? err.message : 'Could not send code');
+      }
     } finally {
       setBusy(false);
     }
