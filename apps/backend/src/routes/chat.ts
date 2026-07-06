@@ -21,6 +21,21 @@ async function loadConversationForMember(id: string, userId: string): Promise<Co
   return conv;
 }
 
+function clampNum(v: string, min: number, max: number): number | null {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+function parseWaveform(v: string): number[] | null {
+  try {
+    const arr = JSON.parse(v) as unknown;
+    if (!Array.isArray(arr)) return null;
+    return arr.slice(0, 64).map((x) => Math.max(0, Math.min(1, Number(x) || 0)));
+  } catch {
+    return null;
+  }
+}
+
 export async function chatRoutes(app: FastifyInstance): Promise<void> {
   app.addHook('preHandler', authGuard); // every /chat/* route requires auth
 
@@ -129,24 +144,52 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     let filename: string | null = null;
     let fileBuf: Buffer | null = null;
     let mime = 'application/octet-stream';
+    let posterBuf: Buffer | null = null;
+    let posterMime = 'image/jpeg';
+    let durationMs: number | null = null;
+    let width: number | null = null;
+    let height: number | null = null;
+    let waveform: number[] | null = null;
+
+    // Fieldname routing (§5.7): poster|thumb → thumbnail; first other file → primary; extras drained.
     for await (const part of req.parts()) {
       if (part.type === 'file') {
-        if (!fileBuf) {
+        if (part.fieldname === 'poster' || part.fieldname === 'thumb') {
+          posterBuf = await part.toBuffer();
+          posterMime = part.mimetype || posterMime;
+        } else if (!fileBuf) {
           fileBuf = await part.toBuffer();
           mime = part.mimetype || mime;
           filename = filename ?? part.filename ?? null;
         } else {
-          await part.toBuffer(); // drain the duplicated `voice` field
+          await part.toBuffer(); // drain extras (legacy duplicate voice field)
         }
-      } else if (part.fieldname === 'type') type = String(part.value);
-      else if (part.fieldname === 'body') body = String(part.value);
-      else if (part.fieldname === 'filename') filename = String(part.value);
+      } else {
+        const v = String(part.value);
+        if (part.fieldname === 'type') type = v;
+        else if (part.fieldname === 'body') body = v;
+        else if (part.fieldname === 'filename') filename = v;
+        else if (part.fieldname === 'duration_ms') durationMs = clampNum(v, 0, 24 * 3600 * 1000);
+        else if (part.fieldname === 'width') width = clampNum(v, 0, 8192);
+        else if (part.fieldname === 'height') height = clampNum(v, 0, 8192);
+        else if (part.fieldname === 'waveform') waveform = parseWaveform(v);
+      }
     }
     if (!fileBuf) throw new ApiError(400, 'invalid_payload_detail');
     const canonical = normalizeChatMessageType(type);
     const kind = canonical === 'document' ? 'document' : 'media';
-    const attachment = await MediaService.store(fileBuf, mime, kind);
-    const msg = await MediaService.sendMediaMessage(conv, userId, type, attachment, body, filename, null);
+    const attachment = await MediaService.store(fileBuf, mime, kind, { duration_ms: durationMs, width, height });
+    let thumbId: string | null = null;
+    if (posterBuf && posterMime.startsWith('image/')) {
+      thumbId = (await MediaService.store(posterBuf, posterMime, 'media')).id;
+    }
+    const msg = await MediaService.sendMediaMessage(conv, userId, type, attachment, body, filename, null, {
+      waveform,
+      duration_ms: durationMs,
+      width,
+      height,
+      thumbAttachmentId: thumbId,
+    });
     return sendOk(reply, msg, { language: req.language });
   });
 

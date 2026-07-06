@@ -109,15 +109,20 @@ export const MediaService = {
     };
   },
 
-  /** Store a blob (dedup by sha256) and return its attachment row. */
-  async store(buffer: Buffer, mime: string, kind: string): Promise<AttachmentRow> {
+  /** Store a blob (dedup by sha256) and return its attachment row. Persists optional media metadata. */
+  async store(
+    buffer: Buffer,
+    mime: string,
+    kind: string,
+    meta: { duration_ms?: number | null; width?: number | null; height?: number | null } = {},
+  ): Promise<AttachmentRow> {
     const maxBytes = kind === 'document' ? env.docMaxBytes : env.mediaMaxBytes;
     if (buffer.byteLength > maxBytes) throw new ApiError(413, 'file_too_large');
     if (!isMimeAllowed(mime)) throw new ApiError(415, 'unsupported_media_type');
 
     const sha256 = createHash('sha256').update(buffer).digest('hex');
     const existing = await this.findBySha(sha256);
-    if (existing) return existing;
+    if (existing) return existing; // dedup: per-message metadata (waveform) rides the message payload, not this row
 
     const dir = storageDir();
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
@@ -125,9 +130,9 @@ export const MediaService = {
     await writeFile(join(dir, storageKey), buffer);
 
     const inserted = await query<AttachmentRow>(
-      `INSERT INTO attachments (sha256, kind, mime, size_bytes, has_thumb, storage_key)
-       VALUES ($1, $2, $3, $4, false, $5) RETURNING *`,
-      [sha256, kind, mime, buffer.byteLength, storageKey],
+      `INSERT INTO attachments (sha256, kind, mime, size_bytes, duration_ms, width, height, has_thumb, storage_key)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8) RETURNING *`,
+      [sha256, kind, mime, buffer.byteLength, meta.duration_ms ?? null, meta.width ?? null, meta.height ?? null, storageKey],
     );
     return inserted.rows[0]!;
   },
@@ -145,18 +150,29 @@ export const MediaService = {
     body: string | null,
     filename: string | null,
     clientRequestId: string | null,
+    extra: {
+      waveform?: number[] | null;
+      duration_ms?: number | null;
+      width?: number | null;
+      height?: number | null;
+      thumbAttachmentId?: string | null;
+    } = {},
   ): Promise<ChatMessage> {
     const canonicalType = normalizeChatMessageType(type);
     const payload = {
       attachment_id: attachment.id,
       mime: attachment.mime ?? undefined,
       size_bytes: attachment.size_bytes ?? undefined,
-      duration_ms: attachment.duration_ms ?? null,
-      width: attachment.width ?? null,
-      height: attachment.height ?? null,
+      duration_ms: extra.duration_ms ?? attachment.duration_ms ?? null,
+      width: extra.width ?? attachment.width ?? null,
+      height: extra.height ?? attachment.height ?? null,
+      waveform: extra.waveform ?? null,
       filename: filename ?? undefined,
       name: filename ?? undefined,
-      links: { media: `/v1/chat/media/${attachment.id}`, thumb: null },
+      links: {
+        media: `/v1/chat/media/${attachment.id}`,
+        thumb: extra.thumbAttachmentId ? `/v1/chat/media/${extra.thumbAttachmentId}` : null,
+      },
     };
     return MessageService.send(conv, senderId, {
       type: canonicalType,

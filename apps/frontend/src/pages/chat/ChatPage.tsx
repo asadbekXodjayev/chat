@@ -4,7 +4,7 @@ import { queryKeys, type ChatParticipant, type ChatMessage } from '@chat/contrac
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQueries';
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
-import { sendText, editMessage, getOrCreateConversation } from '../../api/chat';
+import { sendText, editMessage, sendVoice, getOrCreateConversation } from '../../api/chat';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -73,6 +73,13 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
     setComposerMode(null);
   };
 
+  const handleSendVoice = async (blob: Blob, durationMs: number, waveform: number[], mime: string) => {
+    if (!active) return;
+    const msg = await sendVoice(active.id, blob, durationMs, waveform, mime);
+    qc.setQueryData(queryKeys.messages(active.id), (old: MessagesInfinite | undefined) => upsertMessage(old, msg));
+    void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
+  };
+
   const logout = () => {
     clearSession();
     onLogout();
@@ -113,6 +120,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
               <ChatComposerPanel
                 conversationId={active.id}
                 onSend={handleSubmit}
+                onSendVoice={handleSendVoice}
                 replyTo={composerMode?.kind === 'reply' ? composerMode.message : null}
                 editing={composerMode?.kind === 'edit' ? composerMode.message : null}
                 onCancelMode={() => setComposerMode(null)}

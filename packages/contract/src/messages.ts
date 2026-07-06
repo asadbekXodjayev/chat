@@ -13,6 +13,7 @@ export interface ChatMediaPayload {
   duration_ms?: number | null; // audio/video/video_note
   width?: number | null;
   height?: number | null;
+  waveform?: number[] | null; // voice message amplitude peaks (≤64, normalized 0..1)
   filename?: string | null;
   name?: string | null;
 }

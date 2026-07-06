@@ -2,6 +2,7 @@ import { Fragment, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type ChatMessage } from '@chat/contract';
 import { MessageMeta } from './MessageMeta';
+import { ChatVoiceMessage } from './ChatVoiceMessage';
 import { toggleReaction, deleteMessage, pinMessage } from '../../../api/chat';
 import { upsertMessage, type MessagesInfinite } from '../../../lib/messageCache';
 
@@ -116,6 +117,8 @@ export function MessageBubble({ message, own, isNewestOwn, onReply, onEdit }: Pr
           )}
           {isText ? (
             <span className="bubble__text">{message.body ? linkify(message.body) : null}</span>
+          ) : message.type === 'audio' ? (
+            <ChatVoiceMessage message={message} own={own} />
           ) : (
             <span className="bubble__media">
               <span className="bubble__media-label">{MEDIA_LABEL[message.type] ?? `[${message.type}]`}</span>

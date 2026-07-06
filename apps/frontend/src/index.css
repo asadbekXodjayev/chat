@@ -1144,6 +1144,39 @@ textarea {
   color: var(--text-dim);
   cursor: default;
 }
+.composer__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.composer__icon--danger { color: var(--danger); }
+.composer--rec { align-items: center; }
+.rec { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+.rec__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.rec__time { font-variant-numeric: tabular-nums; font-weight: 600; }
+.rec__hint { font-size: 0.85rem; }
+
+/* Voice message player */
+.voice { display: flex; align-items: center; gap: 10px; min-width: 190px; padding: 2px 0; }
+.voice__play {
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: var(--accent); color: var(--accent-ink); font-size: 0.95rem;
+  flex-shrink: 0; display: grid; place-items: center;
+}
+.voice__play:disabled { opacity: 0.5; }
+.voice__wave { flex: 1; display: flex; align-items: center; gap: 2px; height: 34px; cursor: pointer; }
+.voice__bar { flex: 1; min-width: 2px; border-radius: 2px; align-self: center; background: color-mix(in srgb, var(--text-dim) 55%, transparent); }
+.voice--own .voice__bar { background: color-mix(in srgb, var(--own-ink) 35%, transparent); }
+.voice__bar.is-played { background: var(--accent); }
+.voice__time { font-size: 0.75rem; color: var(--text-dim); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
 /* ---- NFR-6 reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {

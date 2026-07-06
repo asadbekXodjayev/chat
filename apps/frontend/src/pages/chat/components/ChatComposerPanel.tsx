@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { ChatMessage } from '@chat/contract';
 import { useChatTyping } from '../../../hooks/useChatTyping';
+import { useVoiceRecorder, computeWaveform } from '../../../hooks/useVoiceRecorder';
 
-// §12.5 — composer: auto-grow textarea, Enter=send, Shift+Enter=newline, typing emission (§10.3).
-// Supports reply + edit modes (a context bar above the input).
+function fmt(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export function ChatComposerPanel({
   conversationId,
   onSend,
+  onSendVoice,
   replyTo,
   editing,
   onCancelMode,
 }: {
   conversationId: string;
   onSend: (text: string) => Promise<void>;
+  onSendVoice?: (blob: Blob, durationMs: number, waveform: number[], mime: string) => Promise<void>;
   replyTo?: ChatMessage | null;
   editing?: ChatMessage | null;
   onCancelMode?: () => void;
@@ -21,13 +27,13 @@ export function ChatComposerPanel({
   const [sending, setSending] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const { onInput, stop } = useChatTyping(conversationId);
+  const recorder = useVoiceRecorder();
 
   useEffect(() => {
     setText('');
     ref.current?.focus();
   }, [conversationId]);
 
-  // Prefill when entering edit mode; focus when entering reply/edit mode.
   useEffect(() => {
     if (editing) setText(editing.body ?? '');
     if (editing || replyTo) ref.current?.focus();
@@ -65,7 +71,39 @@ export function ChatComposerPanel({
     }
   };
 
+  const finishVoice = async () => {
+    const res = await recorder.stop();
+    if (res && res.durationMs > 400 && onSendVoice) {
+      const wf = await computeWaveform(res.blob);
+      try {
+        await onSendVoice(res.blob, res.durationMs, wf, res.mime);
+      } catch {
+        /* global error path */
+      }
+    }
+  };
+
   const mode = editing ? 'edit' : replyTo ? 'reply' : null;
+
+  if (recorder.recording) {
+    return (
+      <div className="composer-wrap">
+        <div className="composer composer--rec">
+          <button className="composer__icon composer__icon--danger" onClick={() => recorder.cancel()} aria-label="Cancel recording" type="button">
+            🗑
+          </button>
+          <div className="rec">
+            <span className="rec__dot" aria-hidden />
+            <span className="rec__time">{fmt(recorder.durationMs)}</span>
+            <span className="rec__hint muted">Recording…</span>
+          </div>
+          <button className="composer__send" onClick={() => void finishVoice()} aria-label="Send voice message" type="button">
+            ➤
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="composer-wrap">
@@ -101,7 +139,13 @@ export function ChatComposerPanel({
             {mode === 'edit' ? '✓' : '➤'}
           </button>
         ) : (
-          <button className="composer__send composer__send--muted" disabled aria-label="Voice message (coming soon)">
+          <button
+            className="composer__send"
+            onClick={() => void recorder.start()}
+            aria-label="Record voice message"
+            type="button"
+            disabled={!onSendVoice}
+          >
             🎙
           </button>
         )}

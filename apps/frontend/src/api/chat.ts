@@ -53,6 +53,39 @@ export function sendText(
 export function pinMessage(messageId: string): Promise<ChatMessage> {
   return apiRequest(v1(chatEndpoints.pinMessage(messageId)), { method: 'POST' });
 }
+export function sendVoice(
+  conversationId: string,
+  blob: Blob,
+  durationMs: number,
+  waveform: number[],
+  mime: string,
+): Promise<ChatMessage> {
+  const ext = mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm';
+  const fd = new FormData();
+  fd.append('type', 'VOICE');
+  fd.append('file', blob, `voice-${Date.now()}.${ext}`);
+  fd.append('duration_ms', String(Math.round(durationMs)));
+  fd.append('waveform', JSON.stringify(waveform));
+  return apiRequest(v1(chatEndpoints.sendMedia(conversationId)), { method: 'POST', form: fd });
+}
+export function sendCircle(
+  conversationId: string,
+  blob: Blob,
+  poster: Blob | null,
+  durationMs: number,
+  size: number,
+  mime: string,
+): Promise<ChatMessage> {
+  const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+  const fd = new FormData();
+  fd.append('type', 'CIRCLE');
+  fd.append('file', blob, `circle-${Date.now()}.${ext}`);
+  if (poster) fd.append('poster', poster, 'poster.jpg');
+  fd.append('duration_ms', String(Math.round(durationMs)));
+  fd.append('width', String(size));
+  fd.append('height', String(size));
+  return apiRequest(v1(chatEndpoints.sendMedia(conversationId)), { method: 'POST', form: fd });
+}
 export function editMessage(messageId: string, body: string): Promise<ChatMessage> {
   return apiRequest(v1(chatEndpoints.editMessage(messageId)), { method: 'PATCH', body: { body } });
 }
