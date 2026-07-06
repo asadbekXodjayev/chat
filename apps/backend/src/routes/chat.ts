@@ -32,8 +32,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     return sendOk(reply, { items }, { language: req.language });
   });
 
-  // #2 peer avatar — no photo store in this build; 404 so the FE falls back to initials.
-  app.get('/v1/chat/users/:id/photo', async (_req, reply) => reply.code(404).send());
+  // #2 peer avatar is served by userRoutes (GET /v1/chat/users/:id/photo) from photo_attachment_id.
 
   // #3 conversations list
   app.get('/v1/chat/conversations', async (req, reply) => {
