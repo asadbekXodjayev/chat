@@ -859,6 +859,119 @@ textarea {
   color: var(--tick-read);
 }
 
+/* ---- Message wrapper + reactions ---- */
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: min(78%, 580px);
+}
+.msg--own {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.msg--peer {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+.msg .bubble {
+  max-width: 100%;
+}
+.msg__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.msg--own .msg__row {
+  flex-direction: row-reverse;
+}
+.msg__react {
+  position: relative;
+}
+.msg__react-btn {
+  opacity: 0;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.15s;
+}
+.msg:hover .msg__react-btn,
+.msg__react-btn:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .msg__react-btn {
+    opacity: 0.45;
+  }
+}
+.reactpop {
+  position: absolute;
+  bottom: 32px;
+  z-index: 10;
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.msg--own .reactpop {
+  right: 0;
+}
+.msg--peer .reactpop {
+  left: 0;
+}
+.reactpop__opt {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  padding: 2px 4px;
+  border-radius: 8px;
+  transition: transform 0.1s;
+}
+.reactpop__opt:hover {
+  background: var(--surface-2);
+  transform: scale(1.2);
+}
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.reactions--own {
+  justify-content: flex-end;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.pill.is-mine {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+.pill__count {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.pill.is-mine .pill__count {
+  color: var(--accent);
+}
+
 /* typing dots */
 .bubble--typing {
   display: inline-flex;

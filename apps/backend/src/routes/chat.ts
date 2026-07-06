@@ -6,10 +6,12 @@ import { rateLimit } from '../plugins/rateLimit';
 import { env } from '../config/env';
 import { UserService } from '../services/users';
 import { ConversationService, type ConversationRow } from '../services/conversations';
-import { MessageService, mapMessageRow } from '../services/messages';
+import { MessageService, mapMessageRow, type MessageRow } from '../services/messages';
 import { ReceiptService } from '../services/receipts';
 import { PresenceService } from '../services/presence';
 import { MediaService } from '../services/media';
+import { ReactionService } from '../services/reactions';
+import { publishToUser } from '../ws/bus';
 import { redis } from '../redis/redis';
 
 async function loadConversationForMember(id: string, userId: string): Promise<ConversationRow> {
@@ -75,6 +77,11 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     });
     if (q.mark_read === '1') await ReceiptService.markConversationRead(conv, userId);
     const items = rows.map((r) => mapMessageRow(r, userId, conv));
+    const reactions = await ReactionService.aggregatesFor(items.map((m) => m.id), userId);
+    for (const m of items) {
+      const rx = reactions.get(m.id);
+      if (rx) m.reactions = rx;
+    }
     return sendOk(reply, { items, cursor }, { language: req.language });
   });
 
@@ -182,6 +189,45 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     if (row.sender_id !== userId) throw new ApiError(403, 'forbidden');
     const conv = await loadConversationForMember(row.conversation_id, userId);
     return sendOk(reply, await MessageService.softDelete(row, conv), { language: req.language });
+  });
+
+  // #12b reactions (emoji or free text, toggle). Realtime reuses the message.updated fanout.
+  const reactWithDto = async (row: MessageRow, conv: ConversationRow, viewerId: string) => {
+    const dto = mapMessageRow(row, viewerId, conv);
+    dto.reactions = await ReactionService.forMessage(row.id, viewerId);
+    return dto;
+  };
+
+  app.put('/v1/chat/messages/:id/reactions', async (req, reply) => {
+    const userId = requireUserId(req);
+    const row = await MessageService.getById((req.params as { id: string }).id);
+    if (!row || row.deleted_at) throw new ApiError(404, 'message_not_found');
+    const conv = await loadConversationForMember(row.conversation_id, userId);
+    const body = (req.body ?? {}) as { emoji?: string; text?: string };
+    await ReactionService.toggle(row.id, conv.id, userId, body.emoji, body.text);
+    const peerId = ConversationService.peerOf(conv, userId);
+    if (peerId) await publishToUser(peerId, { type: 'message.updated', data: await reactWithDto(row, conv, peerId) });
+    return sendOk(reply, await reactWithDto(row, conv, userId), { language: req.language });
+  });
+
+  app.delete('/v1/chat/messages/:id/reactions/:key', async (req, reply) => {
+    const userId = requireUserId(req);
+    const p = req.params as { id: string; key: string };
+    const row = await MessageService.getById(p.id);
+    if (!row) throw new ApiError(404, 'message_not_found');
+    const conv = await loadConversationForMember(row.conversation_id, userId);
+    await ReactionService.removeByKey(row.id, userId, decodeURIComponent(p.key));
+    const peerId = ConversationService.peerOf(conv, userId);
+    if (peerId) await publishToUser(peerId, { type: 'message.updated', data: await reactWithDto(row, conv, peerId) });
+    return sendOk(reply, await reactWithDto(row, conv, userId), { language: req.language });
+  });
+
+  app.get('/v1/chat/messages/:id/reactions', async (req, reply) => {
+    const userId = requireUserId(req);
+    const row = await MessageService.getById((req.params as { id: string }).id);
+    if (!row) throw new ApiError(404, 'message_not_found');
+    await loadConversationForMember(row.conversation_id, userId);
+    return sendOk(reply, { reactions: await ReactionService.forMessage(row.id, userId) }, { language: req.language });
   });
 
   // #13 / #14 authenticated media stream (blob, not envelope)

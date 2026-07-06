@@ -51,6 +51,12 @@ export function editMessage(messageId: string, body: string): Promise<ChatMessag
 export function deleteMessage(messageId: string): Promise<{ deleted: boolean }> {
   return apiRequest(v1(chatEndpoints.deleteMessage(messageId)), { method: 'DELETE' });
 }
+export function toggleReaction(messageId: string, r: { emoji?: string; text?: string }): Promise<ChatMessage> {
+  return apiRequest(v1(chatEndpoints.reactions(messageId)), { method: 'PUT', body: r });
+}
+export function removeReaction(messageId: string, key: string): Promise<ChatMessage> {
+  return apiRequest(v1(chatEndpoints.reaction(messageId, key)), { method: 'DELETE' });
+}
 export function userFinder(phone: string, limit = 10): Promise<{ items?: ChatUserFinderItem[] }> {
   return apiRequest(v1(chatEndpoints.userFinder(phone, limit)));
 }

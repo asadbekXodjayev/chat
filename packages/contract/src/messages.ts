@@ -1,4 +1,5 @@
 import type { ChatMessageType } from './messageType.js';
+import type { ChatReactionAggregate } from './reactions.js';
 
 // §6.4 — media payload (image/video/audio/voice/video_note/document).
 export interface ChatMediaPayload {
@@ -49,6 +50,7 @@ export interface ChatMessage {
   delivered_at: string | null; // null until delivered to peer device
   read_by_me: boolean; // current user has read this (peer's) message
   read_by_peer: boolean; // peer has read this (my) message
+  reactions?: ChatReactionAggregate[]; // aggregated emoji/text reactions (§6.x)
   /** CLIENT-ONLY optimistic marker — never sent by the server. */
   optimistic?: { localUrl: string };
 }
