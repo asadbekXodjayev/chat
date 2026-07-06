@@ -8,6 +8,7 @@ import { sendText, editMessage, sendVoice, sendCircle, getOrCreateConversation }
 import { ChatVideoNoteRecorder } from './components/ChatVideoNoteRecorder';
 import { CallModal } from '../../components/CallModal';
 import { CallController } from '../../lib/callController';
+import { Toasts } from '../../components/Toasts';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -162,6 +163,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
         <ChatVideoNoteRecorder onSend={handleSendCircle} onClose={() => setCircleOpen(false)} />
       )}
       <CallModal />
+      <Toasts onOpen={setActiveConversation} />
     </div>
   );
 }

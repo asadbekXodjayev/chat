@@ -6,6 +6,7 @@ import {
   TYPING_STOP_WIRE_TYPES,
   WS_TIMERS,
   type ChatMessage,
+  type ChatConversation,
   type WsMessageDeliveredData,
   type WsConversationReadData,
   type WsMessageDeletedData,
@@ -25,6 +26,16 @@ import {
   stampDeleted,
   type MessagesInfinite,
 } from '../lib/messageCache';
+
+const TOAST_PREVIEW: Record<string, string> = {
+  img: '📷 Photo',
+  video: '🎥 Video',
+  video_note: '⭕ Video note',
+  audio: '🎙 Voice message',
+  document: '📄 Document',
+  location: '📍 Location',
+  call: '📞 Call',
+};
 
 function looksLikeMessage(o: Record<string, unknown>): boolean {
   return typeof o['id'] === 'string' && typeof o['conversation_id'] === 'string' && typeof o['sender_id'] === 'string';
@@ -61,6 +72,17 @@ function createDispatcher(qc: QueryClient) {
         patchMessages(qc, msg.conversation_id, (d) => upsertMessage(d, msg));
         if (store().activeConversationId === msg.conversation_id && msg.sender_id !== me) {
           void markConversationRead(msg.conversation_id).catch(() => {});
+        } else if (msg.sender_id !== me && !document.hidden) {
+          // §7.10 — client-derived new-message toast (not for the active conversation / hidden tab).
+          const convs = qc.getQueryData<ChatConversation[]>(queryKeys.conversations());
+          const conv = convs?.find((c) => c.id === msg.conversation_id);
+          const title = conv?.peer?.name || conv?.peer?.phone || 'New message';
+          store().pushToast({
+            id: msg.id,
+            conversationId: msg.conversation_id,
+            title,
+            body: msg.body || TOAST_PREVIEW[msg.type] || 'Message',
+          });
         }
         invalidateConversations();
         break;
