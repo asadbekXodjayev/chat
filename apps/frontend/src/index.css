@@ -1178,6 +1178,46 @@ textarea {
 .voice__bar.is-played { background: var(--accent); }
 .voice__time { font-size: 0.75rem; color: var(--text-dim); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
+/* Video-note recorder overlay */
+.vnote {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(6, 10, 18, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.vnote__stage { position: relative; width: min(70vw, 320px); aspect-ratio: 1; }
+.vnote__preview { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; transform: scaleX(-1); background: #000; }
+.vnote__ring { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); transform: rotate(-90deg); }
+.vnote__ring-bg { fill: none; stroke: rgba(255, 255, 255, 0.15); stroke-width: 2.5; }
+.vnote__ring-fg { fill: none; stroke: var(--danger); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.1s linear; }
+.vnote__time { color: #fff; font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.vnote__err { color: #fff; text-align: center; }
+.vnote__controls { display: flex; align-items: center; gap: 24px; }
+.vnote__stop { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #fff; background: var(--danger); color: #fff; font-size: 1.2rem; }
+
+/* Round video-note bubble */
+.bubble:has(.vnbubble) { padding: 0; background: transparent; border: none; box-shadow: none; }
+.vnbubble { position: relative; width: 200px; height: 200px; border-radius: 50%; overflow: hidden; cursor: pointer; background: #000; }
+.vnbubble__video { width: 100%; height: 100%; object-fit: cover; }
+.vnbubble__ph { width: 100%; height: 100%; background: var(--surface-2); }
+.vnbubble__play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 2rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
 /* ---- NFR-6 reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
   * {

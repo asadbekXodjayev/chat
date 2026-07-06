@@ -24,6 +24,7 @@ const ALIAS_TO_CANONICAL: Record<string, ChatMessageType> = {
   video: 'video',
   video_note: 'video_note',
   videonote: 'video_note',
+  circle: 'video_note',
   location: 'location',
   document: 'document',
   doc: 'document',
@@ -39,9 +40,12 @@ export function normalizeChatMessageType(raw: string | null | undefined): ChatMe
 // §8.1 — the media upload `type` values accepted by POST .../messages/media and /media-ref.
 // Note VOICE is a distinct upload type (file duplicated under a `voice` form field) whose
 // stored message type normalizes to `audio`.
-export const MEDIA_UPLOAD_TYPES = ['img', 'audio', 'video', 'video_note', 'document', 'VOICE'] as const;
+export const MEDIA_UPLOAD_TYPES = ['img', 'audio', 'video', 'video_note', 'document', 'VOICE', 'CIRCLE'] as const;
 export type MediaUploadType = (typeof MEDIA_UPLOAD_TYPES)[number];
 
 export function isVoiceUpload(type: string): boolean {
   return type.toUpperCase() === 'VOICE';
+}
+export function isCircleUpload(type: string): boolean {
+  return type.toUpperCase() === 'CIRCLE';
 }

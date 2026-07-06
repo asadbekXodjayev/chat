@@ -4,7 +4,8 @@ import { queryKeys, type ChatParticipant, type ChatMessage } from '@chat/contrac
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQueries';
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
-import { sendText, editMessage, sendVoice, getOrCreateConversation } from '../../api/chat';
+import { sendText, editMessage, sendVoice, sendCircle, getOrCreateConversation } from '../../api/chat';
+import { ChatVideoNoteRecorder } from './components/ChatVideoNoteRecorder';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -35,6 +36,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
   const rail = !isMobile && sidebarWidth < 96;
 
   const [composerMode, setComposerMode] = useState<{ kind: 'reply' | 'edit'; message: ChatMessage } | null>(null);
+  const [circleOpen, setCircleOpen] = useState(false);
   useEffect(() => setComposerMode(null), [activeConversationId]);
 
   const active = useMemo(
@@ -80,6 +82,13 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
     void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
   };
 
+  const handleSendCircle = async (blob: Blob, poster: Blob | null, durationMs: number, size: number, mime: string) => {
+    if (!active) return;
+    const msg = await sendCircle(active.id, blob, poster, durationMs, size, mime);
+    qc.setQueryData(queryKeys.messages(active.id), (old: MessagesInfinite | undefined) => upsertMessage(old, msg));
+    void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
+  };
+
   const logout = () => {
     clearSession();
     onLogout();
@@ -121,6 +130,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
                 conversationId={active.id}
                 onSend={handleSubmit}
                 onSendVoice={handleSendVoice}
+                onOpenCircle={() => setCircleOpen(true)}
                 replyTo={composerMode?.kind === 'reply' ? composerMode.message : null}
                 editing={composerMode?.kind === 'edit' ? composerMode.message : null}
                 onCancelMode={() => setComposerMode(null)}
@@ -145,6 +155,9 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
         onLogout={logout}
       />
       <ProfilePage open={profileOpen} onClose={() => setProfileOpen(false)} me={me} onUpdated={setMe} />
+      {circleOpen && active && (
+        <ChatVideoNoteRecorder onSend={handleSendCircle} onClose={() => setCircleOpen(false)} />
+      )}
     </div>
   );
 }

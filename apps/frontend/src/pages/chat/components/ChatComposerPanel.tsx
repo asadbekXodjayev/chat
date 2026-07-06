@@ -12,6 +12,7 @@ export function ChatComposerPanel({
   conversationId,
   onSend,
   onSendVoice,
+  onOpenCircle,
   replyTo,
   editing,
   onCancelMode,
@@ -19,6 +20,7 @@ export function ChatComposerPanel({
   conversationId: string;
   onSend: (text: string) => Promise<void>;
   onSendVoice?: (blob: Blob, durationMs: number, waveform: number[], mime: string) => Promise<void>;
+  onOpenCircle?: () => void;
   replyTo?: ChatMessage | null;
   editing?: ChatMessage | null;
   onCancelMode?: () => void;
@@ -139,15 +141,22 @@ export function ChatComposerPanel({
             {mode === 'edit' ? '✓' : '➤'}
           </button>
         ) : (
-          <button
-            className="composer__send"
-            onClick={() => void recorder.start()}
-            aria-label="Record voice message"
-            type="button"
-            disabled={!onSendVoice}
-          >
-            🎙
-          </button>
+          <>
+            {onOpenCircle && (
+              <button className="composer__icon" onClick={onOpenCircle} aria-label="Record video note" type="button">
+                🎥
+              </button>
+            )}
+            <button
+              className="composer__send"
+              onClick={() => void recorder.start()}
+              aria-label="Record voice message"
+              type="button"
+              disabled={!onSendVoice}
+            >
+              🎙
+            </button>
+          </>
         )}
       </div>
     </div>
