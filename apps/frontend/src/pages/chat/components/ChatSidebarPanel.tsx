@@ -12,10 +12,10 @@ interface Props {
   activeId: string | null;
   onSelect: (id: string) => void;
   onOpenPeer: (peerId: string) => void;
-  onLogout: () => void;
+  onBurger: () => void;
 }
 
-export function ChatSidebarPanel({ me, conversations, loading, activeId, onSelect, onOpenPeer, onLogout }: Props) {
+export function ChatSidebarPanel({ me, conversations, loading, activeId, onSelect, onOpenPeer, onBurger }: Props) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
 
@@ -49,18 +49,23 @@ export function ChatSidebarPanel({ me, conversations, loading, activeId, onSelec
 
   return (
     <aside className="sidebar">
-      <div className="sidebar__search">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search or start a new chat"
-          aria-label="Search conversations and people"
-        />
-        {search && (
-          <button className="sidebar__clear" onClick={() => setSearch('')} aria-label="Clear search">
-            ×
-          </button>
-        )}
+      <div className="sidebar__top">
+        <button className="sidebar__burger" onClick={onBurger} aria-label="Open menu" type="button">
+          <span aria-hidden>☰</span>
+        </button>
+        <div className="sidebar__search">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search or start a new chat"
+            aria-label="Search conversations and people"
+          />
+          {search && (
+            <button className="sidebar__clear" onClick={() => setSearch('')} aria-label="Clear search">
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="sidebar__list" role="list">
@@ -96,17 +101,6 @@ export function ChatSidebarPanel({ me, conversations, loading, activeId, onSelec
             <p className="muted">Search a phone number above to start one.</p>
           </div>
         )}
-      </div>
-
-      <div className="sidebar__self">
-        <Avatar name={me.name} phone={me.phone} size={36} />
-        <div className="sidebar__self-id">
-          <span className="convrow__name">{me.name || 'You'}</span>
-          <span className="muted">{me.phone}</span>
-        </div>
-        <button className="btn btn--ghost" onClick={onLogout}>
-          Sign out
-        </button>
       </div>
     </aside>
   );

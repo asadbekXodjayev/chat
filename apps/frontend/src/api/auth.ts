@@ -43,6 +43,24 @@ export function getMe(): Promise<PublicUserProfile> {
   return apiRequest(v1(userEndpoints.me()));
 }
 
+export async function updateProfile(patch: {
+  name?: string;
+  username?: string;
+  bio?: string;
+}): Promise<PublicUserProfile> {
+  const me = await apiRequest<PublicUserProfile>(v1(userEndpoints.me()), { method: 'PATCH', body: patch });
+  updateUser({
+    id: me.id,
+    name: me.name,
+    phone: me.phone ?? '',
+    role: me.role ?? 'user',
+    username: me.username,
+    has_photo: me.has_photo,
+    photo_url: me.photo_url,
+  });
+  return me;
+}
+
 export async function logout(): Promise<void> {
   const refresh_token = getRefreshToken() ?? undefined;
   await apiRequest(v1(authEndpoints.logout()), { method: 'POST', body: { refresh_token } }).catch(() => undefined);

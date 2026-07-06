@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type ChatParticipant } from '@chat/contract';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
@@ -10,9 +10,15 @@ import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
 import { ChatThreadPanel } from './components/ChatThreadPanel';
 import { ChatComposerPanel } from './components/ChatComposerPanel';
+import { AppDrawer } from '../../components/AppDrawer';
+import { ProfilePage } from '../../components/ProfilePage';
 
-export function ChatPage({ me, onLogout }: { me: ChatParticipant; onLogout: () => void }) {
+export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onLogout: () => void }) {
   useChatWebSocket(); // the single shared socket for this tab
+
+  const [me, setMe] = useState(meInitial);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const qc = useQueryClient();
   const conversationsQuery = useConversationsQuery();
@@ -63,8 +69,16 @@ export function ChatPage({ me, onLogout }: { me: ChatParticipant; onLogout: () =
         activeId={activeConversationId}
         onSelect={setActiveConversation}
         onOpenPeer={openConversationWithPeer}
+        onBurger={() => setDrawerOpen(true)}
+      />
+      <AppDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        me={me}
+        onOpenProfile={() => setProfileOpen(true)}
         onLogout={logout}
       />
+      <ProfilePage open={profileOpen} onClose={() => setProfileOpen(false)} me={me} onUpdated={setMe} />
       <main className="main">
         {active ? (
           <>
