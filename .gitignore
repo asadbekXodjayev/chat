@@ -1,0 +1,31 @@
+# deps
+node_modules/
+.pnp.*
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# env
+.env
+.env.*.local
+!.env.example
+
+# local media object store (dev)
+apps/backend/.storage/
+storage/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# test / coverage
+coverage/
+.vitest/

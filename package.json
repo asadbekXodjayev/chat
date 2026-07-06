@@ -1,0 +1,28 @@
+{
+  "name": "chat-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "1:1 real-time chat messenger with WebRTC audio/video/screen-share calling. Monorepo: shared wire contract + Fastify backend + React/Vite frontend.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:contract": "npm run build --workspace @chat/contract",
+    "dev:backend": "npm run dev --workspace @chat/backend",
+    "dev:frontend": "npm run dev --workspace @chat/frontend",
+    "dev": "npm run build:contract && concurrently -n backend,frontend -c blue,magenta \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "migrate": "npm run migrate --workspace @chat/backend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.6.3"
+  }
+}
