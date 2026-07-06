@@ -6,6 +6,8 @@ import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQuer
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
 import { sendText, editMessage, sendVoice, sendCircle, getOrCreateConversation } from '../../api/chat';
 import { ChatVideoNoteRecorder } from './components/ChatVideoNoteRecorder';
+import { CallModal } from '../../components/CallModal';
+import { CallController } from '../../lib/callController';
 import { upsertMessage, flattenSortedMessages, type MessagesInfinite } from '../../lib/messageCache';
 import { clearSession } from '../../lib/session';
 import { ChatSidebarPanel } from './components/ChatSidebarPanel';
@@ -38,6 +40,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
   const [composerMode, setComposerMode] = useState<{ kind: 'reply' | 'edit'; message: ChatMessage } | null>(null);
   const [circleOpen, setCircleOpen] = useState(false);
   useEffect(() => setComposerMode(null), [activeConversationId]);
+  useEffect(() => CallController.init(), []); // subscribe the call engine to inbound call frames
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
@@ -158,6 +161,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
       {circleOpen && active && (
         <ChatVideoNoteRecorder onSend={handleSendCircle} onClose={() => setCircleOpen(false)} />
       )}
+      <CallModal />
     </div>
   );
 }

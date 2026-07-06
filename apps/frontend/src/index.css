@@ -777,6 +777,49 @@ textarea {
 .thread__subtitle.is-typing {
   color: var(--accent);
 }
+.thread__actions { margin-left: auto; display: flex; gap: 4px; }
+.thread__act {
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: transparent; color: var(--text-dim); font-size: 1.05rem;
+  display: grid; place-items: center;
+}
+.thread__act:hover { background: var(--surface-2); color: var(--text); }
+
+/* Call modal */
+.call {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #0b1016;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+.call__remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+.call__local {
+  position: absolute; top: 18px; right: 18px; width: 108px; height: 150px;
+  object-fit: cover; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.3);
+  transform: scaleX(-1); z-index: 2;
+}
+.call__center {
+  position: relative; z-index: 1; flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; text-align: center;
+}
+.call__name { margin: 6px 0 0; font-size: 1.6rem; }
+.call__status { margin: 0; color: rgba(255, 255, 255, 0.7); }
+.call__controls { position: relative; z-index: 3; display: flex; gap: 22px; }
+.call__btn {
+  width: 62px; height: 62px; border-radius: 50%; border: none;
+  background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 1.4rem;
+  display: grid; place-items: center; backdrop-filter: blur(4px);
+}
+.call__btn.is-on { background: rgba(255, 255, 255, 0.9); color: #0b1016; }
+.call__btn--decline { background: var(--danger); }
+.call__btn--accept { background: var(--accent); }
 .thread__scroll {
   flex: 1;
   overflow-y: auto;

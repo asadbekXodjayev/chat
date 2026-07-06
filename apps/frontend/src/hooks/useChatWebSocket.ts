@@ -14,6 +14,7 @@ import {
 } from '@chat/contract';
 import { buildChatWebSocketUrl } from '../lib/buildChatWebSocketUrl';
 import { setActiveSocket } from '../lib/socketBus';
+import { emitCallFrame } from '../lib/callBus';
 import { getUser } from '../lib/session';
 import { useChatRealtimeStore } from '../stores/useChatRealtimeStore';
 import { markConversationRead } from '../api/chat';
@@ -100,7 +101,15 @@ function createDispatcher(qc: QueryClient) {
         if (typing) store().setUserOnline(d.user_id, true);
         break;
       }
-      // webrtc_* / call_* handled by the (deferred) call modal, ignored at chat-page level.
+      // Call/WebRTC frames are forwarded to the call layer via the callBus (§7.8).
+      case 'call_invite':
+      case 'call_accept':
+      case 'call_end':
+      case 'webrtc_offer':
+      case 'webrtc_answer':
+      case 'webrtc_ice':
+        emitCallFrame({ kind, wire, data });
+        break;
       default:
         break;
     }

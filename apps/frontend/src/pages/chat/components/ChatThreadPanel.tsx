@@ -6,6 +6,7 @@ import { dayKey, daySeparatorLabel, relativeLastSeen } from '../../../lib/format
 import { Avatar } from '../../../components/Avatar';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
+import { CallController } from '../../../lib/callController';
 
 interface Props {
   conversation: ChatConversation;
@@ -72,6 +73,24 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
         <div className="thread__peer">
           <span className="thread__name">{peer?.name || peer?.phone || 'Unknown user'}</span>
           <span className={`thread__subtitle ${peerTyping ? 'is-typing' : ''}`}>{subtitle}</span>
+        </div>
+        <div className="thread__actions">
+          <button
+            className="thread__act"
+            onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'audio')}
+            aria-label="Voice call"
+            type="button"
+          >
+            📞
+          </button>
+          <button
+            className="thread__act"
+            onClick={() => void CallController.startCall(peerId, peer?.name ?? null, peer?.phone ?? null, 'video')}
+            aria-label="Video call"
+            type="button"
+          >
+            🎥
+          </button>
         </div>
       </header>
 
