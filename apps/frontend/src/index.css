@@ -162,6 +162,107 @@ textarea {
   outline-offset: 0;
 }
 
+/* ---- Auth (animated hero + multi-step card) ---- */
+.auth {
+  position: relative;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+}
+.auth__hero {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(120% 120% at 50% -10%, color-mix(in srgb, var(--accent) 14%, var(--bg)), var(--bg) 60%);
+}
+.auth__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.auth__orb--1 {
+  width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax;
+  background: radial-gradient(circle at 30% 30%, var(--accent), transparent 70%);
+  animation: floaty 18s ease-in-out infinite;
+}
+.auth__orb--2 {
+  width: 38vmax; height: 38vmax; right: -10vmax; top: 8vmax;
+  background: radial-gradient(circle at 60% 40%, #2f9bf6, transparent 70%);
+  animation: floaty 22s ease-in-out infinite reverse;
+}
+.auth__orb--3 {
+  width: 34vmax; height: 34vmax; left: 28vmax; bottom: -16vmax;
+  background: radial-gradient(circle at 50% 50%, #7c5cff, transparent 70%);
+  animation: floaty 26s ease-in-out infinite;
+}
+.auth__grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(80% 60% at 50% 40%, #000, transparent 75%);
+}
+@keyframes floaty {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(4vmax, 3vmax, 0) scale(1.08); }
+  66% { transform: translate3d(-3vmax, 2vmax, 0) scale(0.96); }
+}
+.auth__stage { position: relative; z-index: 1; width: min(420px, 100%); }
+.auth__card {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px -20px rgba(8, 15, 30, 0.45);
+  padding: 30px 26px;
+}
+.auth__brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.auth__logo {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px;
+  background: var(--accent); color: var(--accent-ink); font-size: 1.25rem;
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.auth__brandname { font-weight: 700; letter-spacing: -0.02em; font-size: 1.15rem; }
+.auth__panel { display: flex; flex-direction: column; gap: 12px; animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.auth__title { font-size: 1.6rem; margin: 0; letter-spacing: -0.03em; }
+.auth__sub { margin: -4px 0 6px; color: var(--text-dim); font-size: 0.92rem; line-height: 1.45; }
+.auth__error { color: var(--danger); margin: 0; font-size: 0.86rem; }
+.auth__fine { color: var(--text-dim); font-size: 0.8rem; margin: 4px 0 0; text-align: center; }
+.auth__fine--warn { color: var(--accent); }
+.auth__back {
+  align-self: flex-start; border: none; background: transparent; color: var(--text-dim);
+  padding: 2px 0; font-size: 0.9rem; margin-bottom: 2px;
+}
+.auth__back:hover { color: var(--text); }
+.auth__resend { text-align: center; min-height: 34px; display: grid; place-items: center; }
+.btn--lg { padding: 12px 16px; border-radius: 12px; font-size: 1rem; }
+
+.field__wrap { position: relative; display: flex; align-items: center; }
+.field__wrap input { flex: 1; padding-left: 26px; }
+.field__prefix { position: absolute; left: 12px; color: var(--text-dim); pointer-events: none; }
+.field__hint { position: absolute; right: 12px; font-size: 0.8rem; color: var(--text-dim); }
+.field__hint--ok { color: var(--accent); }
+.field__hint--bad { color: var(--danger); }
+
+/* OTP */
+.otp {
+  position: relative; display: flex; gap: 8px; border: none; background: transparent; padding: 4px 0;
+  justify-content: space-between;
+}
+.otp__cell {
+  flex: 1; aspect-ratio: 1 / 1.15; max-width: 52px; display: grid; place-items: center;
+  border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg);
+  font-size: 1.5rem; font-weight: 600; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.otp__cell.is-filled { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.otp__cell.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.otp__input { position: absolute; inset: 0; opacity: 0; cursor: text; }
+
 /* ---- App shell ---- */
 .app {
   display: grid;

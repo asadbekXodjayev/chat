@@ -53,6 +53,12 @@ export function updateToken(token: TokenPair): void {
   localStorage.setItem(KEY, JSON.stringify(cached));
 }
 
+export function updateUser(user: ChatParticipant): void {
+  if (!cached) return;
+  cached = { ...cached, user };
+  localStorage.setItem(KEY, JSON.stringify(cached));
+}
+
 export function clearSession(): void {
   cached = null;
   localStorage.removeItem(KEY);

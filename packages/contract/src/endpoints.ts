@@ -1,6 +1,25 @@
 // §8 — REST paths. All under /v1. NEVER inline an endpoint string; import from here so FE and BE agree.
 export const API_PREFIX = '/v1';
 
+// §5.1 — Telegram-OTP auth.
+export const authEndpoints = {
+  requestCode: () => `/auth/request-code`,
+  verifyCode: () => `/auth/verify-code`,
+  register: () => `/auth/register`,
+  refresh: () => `/auth/refresh`,
+  logout: () => `/auth/logout`,
+  logoutAll: () => `/auth/logout-all`,
+} as const;
+
+// §5.2 — profile.
+export const userEndpoints = {
+  me: () => `/users/me`,
+  user: (id: string) => `/users/${id}`,
+  usernameAvailable: (username: string) => `/users/username-available?username=${encodeURIComponent(username)}`,
+  myPhoto: () => `/users/me/photo`,
+  userPhoto: (id: string) => `/chat/users/${id}/photo`,
+} as const;
+
 export const chatEndpoints = {
   userFinder: (phone: string, limit = 10) =>
     `/chat/user-finder?phone=${encodeURIComponent(phone)}&limit=${limit}`,

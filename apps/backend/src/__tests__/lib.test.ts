@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toRfc3339Nano } from '../lib/time';
-import { signTokenPair, verifyToken, extractToken } from '../lib/auth';
+import { signAccessToken, verifyToken, extractToken } from '../lib/auth';
 import { localize } from '../lib/i18n';
 
 describe('RFC3339Nano timestamps (§7.3)', () => {
@@ -13,8 +13,8 @@ describe('RFC3339Nano timestamps (§7.3)', () => {
 
 describe('auth (§7.1 / Q1)', () => {
   it('signs and verifies an access token', () => {
-    const pair = signTokenPair('user-1', 'user');
-    const claims = verifyToken(pair.access_token);
+    const access = signAccessToken('user-1', 'user');
+    const claims = verifyToken(access);
     expect(claims?.sub).toBe('user-1');
     expect(claims?.typ).toBe('access');
   });

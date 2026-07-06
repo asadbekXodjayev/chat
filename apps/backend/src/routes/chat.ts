@@ -135,6 +135,8 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     if (!body.sha256 || !body.type) throw new ApiError(400, 'invalid_payload_detail');
     const attachment = await MediaService.findBySha(body.sha256);
     if (!attachment) throw new ApiError(404, 'message_not_found');
+    // §3.7 — you may only re-attach content you already have access to; else force a fresh upload.
+    if (!(await MediaService.userHasSha(body.sha256, userId))) throw new ApiError(404, 'message_not_found');
     const msg = await MediaService.sendMediaMessage(
       conv,
       userId,
@@ -149,9 +151,14 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
   // #10 file probe (dedup existence)
   app.post('/v1/chat/files/probe', async (req, reply) => {
-    requireUserId(req);
+    const userId = requireUserId(req);
+    await rateLimit(userId, 'probe', 30, 60);
     const body = (req.body ?? {}) as { sha256?: string };
     if (!body.sha256) throw new ApiError(400, 'invalid_payload_detail');
+    // §3.7 — caller-scoped: only reveal existence/metadata for content this user can already access.
+    if (!(await MediaService.userHasSha(body.sha256, userId))) {
+      return sendOk(reply, { exists: false }, { language: req.language });
+    }
     return sendOk(reply, await MediaService.probe(body.sha256), { language: req.language });
   });
 
@@ -180,13 +187,18 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
   // #13 / #14 authenticated media stream (blob, not envelope)
   const streamMedia = async (req: FastifyRequest, reply: FastifyReply) => {
-    requireUserId(req);
+    const userId = requireUserId(req);
     const a = await MediaService.getById((req.params as { id: string }).id);
     if (!a) return reply.code(404).send();
+    // §3.4 — authorize on the message↔conversation edge; 404 on miss (no existence oracle).
+    if (!(await MediaService.canAccess(a.id, userId))) return reply.code(404).send();
     const buf = await MediaService.readBlob(a);
-    reply.header('Content-Type', a.mime ?? 'application/octet-stream');
+    const mime = a.mime ?? 'application/octet-stream';
+    const inlineSafe = /^(image|audio|video)\//.test(mime) || mime === 'application/pdf';
+    reply.header('X-Content-Type-Options', 'nosniff'); // §3.10 — never sniff to text/html or SVG
+    reply.header('Content-Type', inlineSafe ? mime : 'application/octet-stream');
     reply.header('Cache-Control', 'private, max-age=3600');
-    if (a.kind === 'document') {
+    if (a.kind === 'document' || !inlineSafe) {
       const name = a.storage_key;
       reply.header('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(name)}`);
     }

@@ -1,6 +1,7 @@
 // @chat/contract — the shared wire contract imported by BOTH backend and frontend.
 // Normative to CHAT_MESSENGER_TZ.md §6–§11, §14.
 export * from './envelope.js';
+export * from './profile.js';
 export * from './messageType.js';
 export * from './messages.js';
 export * from './conversations.js';

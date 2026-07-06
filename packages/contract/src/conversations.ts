@@ -7,6 +7,9 @@ export interface ChatParticipant {
   name: string | null;
   phone: string;
   role: string;
+  username?: string | null;
+  has_photo?: boolean;
+  photo_url?: string | null;
 }
 
 export interface ChatConversation {

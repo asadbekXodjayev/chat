@@ -58,6 +58,41 @@ export const MediaService = {
     return r.rows[0] ?? null;
   },
 
+  /**
+   * §3.4 — authorize a media read on the message↔conversation/membership EDGE, never the (globally
+   * deduped) attachment row. A user may read an attachment only if some message they can see
+   * references it. Closes the cross-tenant IDOR. Callers 404 on `false` (no existence oracle).
+   */
+  async canAccess(attachmentId: string, userId: string): Promise<boolean> {
+    const r = await query<{ ok: number }>(
+      `SELECT 1 AS ok FROM messages m
+         JOIN conversations c ON c.id = m.conversation_id
+        WHERE m.payload->>'attachment_id' = $1
+          AND ( c.user_a_id = $2 OR c.user_b_id = $2
+                OR EXISTS (SELECT 1 FROM conversation_members cm
+                            WHERE cm.conversation_id = c.id AND cm.user_id = $2) )
+        LIMIT 1`,
+      [attachmentId, userId],
+    );
+    return r.rows.length > 0;
+  },
+
+  /** Whether this user already has access to ANY message referencing a given sha256 (scoped probe/dedup, §3.7). */
+  async userHasSha(sha256: string, userId: string): Promise<boolean> {
+    const r = await query<{ ok: number }>(
+      `SELECT 1 AS ok FROM messages m
+         JOIN conversations c ON c.id = m.conversation_id
+         JOIN attachments a ON a.id::text = m.payload->>'attachment_id'
+        WHERE a.sha256 = $1
+          AND ( c.user_a_id = $2 OR c.user_b_id = $2
+                OR EXISTS (SELECT 1 FROM conversation_members cm
+                            WHERE cm.conversation_id = c.id AND cm.user_id = $2) )
+        LIMIT 1`,
+      [sha256, userId],
+    );
+    return r.rows.length > 0;
+  },
+
   // §8.1 #10 — dedup existence check before upload.
   async probe(sha256: string): Promise<FileProbeResponse> {
     const a = await this.findBySha(sha256);

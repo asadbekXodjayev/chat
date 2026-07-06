@@ -28,6 +28,26 @@ const CATALOGUE: Catalogue = {
   internal_error: { en: 'Server error', ru: 'Ошибка сервера', uz: 'Server xatosi' },
   file_too_large: { en: 'File too large', ru: 'Файл слишком большой', uz: 'Fayl juda katta' },
   unsupported_media_type: { en: 'Unsupported file type', ru: 'Неподдерживаемый тип файла', uz: 'Qoʻllab-quvvatlanmaydigan tur' },
+  otp_sent: { en: 'Verification code sent', ru: 'Код подтверждения отправлен', uz: 'Tasdiqlash kodi yuborildi' },
+  otp_invalid: { en: 'Invalid verification code', ru: 'Неверный код', uz: 'Kod notoʻgʻri' },
+  otp_expired: { en: 'Code expired — request a new one', ru: 'Код истёк — запросите новый', uz: 'Kod eskirdi — yangisini soʻrang' },
+  otp_too_many_attempts: {
+    en: 'Too many attempts — request a new code',
+    ru: 'Слишком много попыток — запросите новый код',
+    uz: 'Juda koʻp urinish — yangi kod soʻrang',
+  },
+  code_send_throttled: {
+    en: 'Please wait before requesting another code',
+    ru: 'Подождите перед повторным запросом кода',
+    uz: 'Yangi kod soʻrashdan oldin kuting',
+  },
+  forbidden_admin_only: { en: 'Admins only', ru: 'Только для администраторов', uz: 'Faqat administratorlar uchun' },
+  username_taken: { en: 'That username is taken', ru: 'Это имя пользователя занято', uz: 'Bu foydalanuvchi nomi band' },
+  username_invalid: {
+    en: 'Username must be 3–32 letters, digits or underscores',
+    ru: 'Имя: 3–32 буквы, цифры или подчёркивания',
+    uz: 'Nom: 3–32 harf, raqam yoki pastki chiziq',
+  },
 };
 
 export function localize(key: string, language: string | null | undefined): string {

@@ -1,12 +1,15 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
-import { env } from './config/env';
+import { env, assertSafeAuthConfig } from './config/env';
 import { ApiError, sendError } from './lib/envelope';
 import { attachRequestContext } from './plugins/context';
 import { authRoutes } from './routes/auth';
+import { userRoutes } from './routes/users';
+import { adminRoutes } from './routes/admin';
 import { chatRoutes } from './routes/chat';
 import { callRoutes } from './routes/calls';
+import { UserService } from './services/users';
 import { attachWebSocketGateway, localConnectionCount } from './ws/gateway';
 
 export async function buildServer(): Promise<FastifyInstance> {
@@ -51,6 +54,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   app.get('/health', async () => ({ ok: true, ws_connections: localConnectionCount() }));
 
   await app.register(authRoutes);
+  await app.register(userRoutes);
+  await app.register(adminRoutes);
   await app.register(chatRoutes);
   await app.register(callRoutes);
 
@@ -58,7 +63,10 @@ export async function buildServer(): Promise<FastifyInstance> {
 }
 
 export async function startServer(): Promise<FastifyInstance> {
+  assertSafeAuthConfig(); // refuse to boot with the test hatch enabled in production (§3.1)
   const app = await buildServer();
+  // Provision the admin role for ADMIN_PHONE (ops-only; never via API).
+  await UserService.ensureAdmin(env.adminPhone).catch((e) => app.log.error({ e }, 'admin seed failed'));
   await app.listen({ port: env.port, host: '0.0.0.0' });
   // Attach the WS gateway to Fastify's underlying HTTP server for /v1/chat/ws upgrades.
   attachWebSocketGateway(app.server);
