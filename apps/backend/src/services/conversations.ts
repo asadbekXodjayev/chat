@@ -37,19 +37,29 @@ export const ConversationService = {
     return r.rows[0] ?? null;
   },
 
-  // §8.1 #4 / §15.1 — get-or-create by {peer_id}, requester ∈ {a,b}.
+  // §8.1 #4 / §15.1 — get-or-create a DM by {peer_id}, requester ∈ {a,b}.
+  // NB: after migration 002 the pair-unique index is PARTIAL (WHERE type='dm'), so the ON CONFLICT
+  // inference clause MUST repeat that predicate, and lookups must be dm-scoped.
   async getOrCreate(requesterId: string, peerId: string): Promise<ConversationRow> {
     const [a, b] = canonPair(requesterId, peerId);
     const inserted = await query<ConversationRow>(
-      `INSERT INTO conversations (user_a_id, user_b_id) VALUES ($1, $2)
-       ON CONFLICT (LEAST(user_a_id, user_b_id), GREATEST(user_a_id, user_b_id)) DO NOTHING
+      `INSERT INTO conversations (user_a_id, user_b_id, type, member_count) VALUES ($1, $2, 'dm', 2)
+       ON CONFLICT (LEAST(user_a_id, user_b_id), GREATEST(user_a_id, user_b_id)) WHERE type = 'dm' DO NOTHING
        RETURNING *`,
       [a, b],
     );
-    if (inserted.rows[0]) return inserted.rows[0];
+    if (inserted.rows[0]) {
+      // Seed membership rows for the new DM (the spine of per-user state / future group support).
+      await query(
+        `INSERT INTO conversation_members (conversation_id, user_id, role)
+         VALUES ($1, $2, 'member'), ($1, $3, 'member') ON CONFLICT DO NOTHING`,
+        [inserted.rows[0].id, a, b],
+      );
+      return inserted.rows[0];
+    }
     const existing = await query<ConversationRow>(
       `SELECT * FROM conversations
-       WHERE LEAST(user_a_id, user_b_id) = $1 AND GREATEST(user_a_id, user_b_id) = $2`,
+       WHERE type = 'dm' AND LEAST(user_a_id, user_b_id) = $1 AND GREATEST(user_a_id, user_b_id) = $2`,
       [a, b],
     );
     return existing.rows[0]!;
