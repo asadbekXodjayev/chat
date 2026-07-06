@@ -283,13 +283,77 @@ textarea {
 /* ---- App shell ---- */
 .app {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: var(--sidebar-w, 340px) 1fr;
   height: 100%;
+  position: relative;
 }
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .app {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* single-pane: list ⇄ thread swap */
   }
+}
+
+/* Desktop resize handle (§7.2) — sits on the sidebar/main seam */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  transform: translateX(-5px);
+  cursor: col-resize;
+  z-index: 6;
+  touch-action: none;
+}
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+.resize-handle:hover::after,
+.resize-handle:focus-visible::after {
+  background: var(--accent);
+}
+.resize-handle:focus-visible {
+  outline: none;
+}
+
+/* Avatar rail — when the sidebar is dragged very narrow, show avatars only */
+.app[data-rail] .sidebar__search,
+.app[data-rail] .convrow__body,
+.app[data-rail] .sidebar__group,
+.app[data-rail] .sidebar__state {
+  display: none;
+}
+.app[data-rail] .sidebar__top {
+  justify-content: center;
+  padding: 10px 4px;
+}
+.app[data-rail] .convrow {
+  justify-content: center;
+  padding: 8px 4px;
+}
+
+/* Thread back button (mobile single-pane) */
+.thread__back {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.thread__back:hover {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 /* ---- Sidebar ---- */

@@ -14,9 +14,10 @@ interface Props {
   hasOlder: boolean;
   loadingOlder: boolean;
   onLoadOlder: () => void;
+  onBack?: () => void;
 }
 
-export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingOlder, onLoadOlder }: Props) {
+export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingOlder, onLoadOlder, onBack }: Props) {
   const peerId = conversation.peer_id;
   const online = useChatRealtimeStore((s) => s.isOnline(peerId));
   const peerTyping = useChatRealtimeStore((s) => s.peerTyping[conversation.id] === true);
@@ -60,6 +61,11 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
   return (
     <section className="thread">
       <header className="thread__header">
+        {onBack && (
+          <button className="thread__back" onClick={onBack} aria-label="Back to chats" type="button">
+            <span aria-hidden>←</span>
+          </button>
+        )}
         <Avatar name={peer?.name} phone={peer?.phone} online={online} size={40} />
         <div className="thread__peer">
           <span className="thread__name">{peer?.name || peer?.phone || 'Unknown user'}</span>

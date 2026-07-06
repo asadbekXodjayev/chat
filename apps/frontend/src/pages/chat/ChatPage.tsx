@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type ChatParticipant } from '@chat/contract';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
@@ -12,6 +12,9 @@ import { ChatThreadPanel } from './components/ChatThreadPanel';
 import { ChatComposerPanel } from './components/ChatComposerPanel';
 import { AppDrawer } from '../../components/AppDrawer';
 import { ProfilePage } from '../../components/ProfilePage';
+import { ResizeHandle } from '../../components/ResizeHandle';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { useUiStore } from '../../stores/useUiStore';
 
 export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onLogout: () => void }) {
   useChatWebSocket(); // the single shared socket for this tab
@@ -26,6 +29,10 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
 
   const activeConversationId = useChatRealtimeStore((s) => s.activeConversationId);
   const setActiveConversation = useChatRealtimeStore((s) => s.setActiveConversation);
+
+  const isMobile = useIsMobile();
+  const sidebarWidth = useUiStore((s) => s.sidebarWidthPx);
+  const rail = !isMobile && sidebarWidth < 96;
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
@@ -60,17 +67,49 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
     onLogout();
   };
 
+  const showSidebar = !isMobile || !active;
+  const showMain = !isMobile || !!active;
+
   return (
-    <div className="app">
-      <ChatSidebarPanel
-        me={me}
-        conversations={conversations}
-        loading={conversationsQuery.isLoading}
-        activeId={activeConversationId}
-        onSelect={setActiveConversation}
-        onOpenPeer={openConversationWithPeer}
-        onBurger={() => setDrawerOpen(true)}
-      />
+    <div className="app" data-rail={rail || undefined} style={{ ['--sidebar-w']: `${sidebarWidth}px` } as CSSProperties}>
+      {showSidebar && (
+        <ChatSidebarPanel
+          me={me}
+          conversations={conversations}
+          loading={conversationsQuery.isLoading}
+          activeId={activeConversationId}
+          onSelect={setActiveConversation}
+          onOpenPeer={openConversationWithPeer}
+          onBurger={() => setDrawerOpen(true)}
+        />
+      )}
+      {!isMobile && <ResizeHandle />}
+      {showMain && (
+        <main className="main">
+          {active ? (
+            <>
+              <ChatThreadPanel
+                conversation={active}
+                messages={messages}
+                me={me}
+                hasOlder={messagesQuery.hasNextPage ?? false}
+                loadingOlder={messagesQuery.isFetchingNextPage}
+                onLoadOlder={() => void messagesQuery.fetchNextPage()}
+                onBack={isMobile ? () => setActiveConversation(null) : undefined}
+              />
+              <ChatComposerPanel conversationId={active.id} onSend={handleSend} />
+            </>
+          ) : (
+            <div className="empty">
+              <div className="empty__art" aria-hidden>
+                ✦
+              </div>
+              <h2>Select a chat</h2>
+              <p>Search a phone number to start a new conversation, or pick one on the left.</p>
+            </div>
+          )}
+        </main>
+      )}
       <AppDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -79,29 +118,6 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
         onLogout={logout}
       />
       <ProfilePage open={profileOpen} onClose={() => setProfileOpen(false)} me={me} onUpdated={setMe} />
-      <main className="main">
-        {active ? (
-          <>
-            <ChatThreadPanel
-              conversation={active}
-              messages={messages}
-              me={me}
-              hasOlder={messagesQuery.hasNextPage ?? false}
-              loadingOlder={messagesQuery.isFetchingNextPage}
-              onLoadOlder={() => void messagesQuery.fetchNextPage()}
-            />
-            <ChatComposerPanel conversationId={active.id} onSend={handleSend} />
-          </>
-        ) : (
-          <div className="empty">
-            <div className="empty__art" aria-hidden>
-              ✦
-            </div>
-            <h2>Select a chat</h2>
-            <p>Search a phone number to start a new conversation, or pick one on the left.</p>
-          </div>
-        )}
-      </main>
     </div>
   );
 }
