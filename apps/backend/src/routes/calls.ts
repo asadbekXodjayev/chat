@@ -19,7 +19,7 @@ export async function callRoutes(app: FastifyInstance): Promise<void> {
   // #3 ICE servers (fresh per call)
   app.get('/v1/calls/ice-servers', async (req, reply) => {
     requireUserId(req);
-    return sendOk(reply, { ice_servers: CallService.iceServers() }, { language: req.language });
+    return sendOk(reply, { ice_servers: await CallService.iceServers() }, { language: req.language });
   });
 
   // #1 history

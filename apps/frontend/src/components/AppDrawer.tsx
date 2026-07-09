@@ -1,16 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { Users, Megaphone, Contact, Phone, Bookmark, Settings, User, type LucideIcon } from 'lucide-react';
 import type { ChatParticipant } from '@chat/contract';
 import { Avatar } from './Avatar';
 import { ThemeToggle } from './ThemeToggle';
 
 // Telegram-style left menu. Items marked `soon` land in later phases (groups/channels/contacts/…).
-const ITEMS: { key: string; icon: string; label: string; soon?: boolean }[] = [
-  { key: 'group', icon: '👥', label: 'New Group', soon: true },
-  { key: 'channel', icon: '📣', label: 'New Channel', soon: true },
-  { key: 'contacts', icon: '📇', label: 'Contacts', soon: true },
-  { key: 'calls', icon: '📞', label: 'Calls', soon: true },
-  { key: 'saved', icon: '🔖', label: 'Saved Messages', soon: true },
-  { key: 'settings', icon: '⚙️', label: 'Settings', soon: true },
+const ITEMS: { key: string; icon: LucideIcon; label: string; soon?: boolean }[] = [
+  { key: 'group', icon: Users, label: 'New Group', soon: true },
+  { key: 'channel', icon: Megaphone, label: 'New Channel', soon: true },
+  { key: 'contacts', icon: Contact, label: 'Contacts', soon: true },
+  { key: 'calls', icon: Phone, label: 'Calls', soon: true },
+  { key: 'saved', icon: Bookmark, label: 'Saved Messages', soon: true },
+  { key: 'settings', icon: Settings, label: 'Settings', soon: true },
 ];
 
 interface Props {
@@ -59,11 +60,12 @@ export function AppDrawer({ open, onClose, me, onOpenProfile, onLogout, onNewGro
 
             <nav className="drawer__nav">
               <button className="drawer__item" onClick={openProfile} type="button">
-                <span aria-hidden>👤</span> Profile
+                <User size={20} aria-hidden /> Profile
               </button>
               {ITEMS.map((it) => {
                 const handler = it.key === 'group' ? onNewGroup : it.key === 'channel' ? onNewChannel : undefined;
                 const enabled = !!handler;
+                const Icon = it.icon;
                 return (
                   <button
                     key={it.key}
@@ -73,7 +75,7 @@ export function AppDrawer({ open, onClose, me, onOpenProfile, onLogout, onNewGro
                     title={enabled ? undefined : 'Coming soon'}
                     onClick={enabled ? () => { onClose(); handler!(); } : undefined}
                   >
-                    <span aria-hidden>{it.icon}</span> {it.label}
+                    <Icon size={20} aria-hidden /> {it.label}
                     {!enabled && <span className="drawer__soon">soon</span>}
                   </button>
                 );

@@ -74,6 +74,12 @@ export const env = {
     .map((s) => s.trim())
     .filter(Boolean),
   callsTurnSecret: str('CALLS_TURN_SECRET', ''),
+  // Hosted TURN providers (§11.2). When set, /v1/calls/ice-servers returns provider-issued
+  // relay credentials so calls traverse symmetric NAT / firewalls. Metered takes precedence.
+  callsMeteredDomain: str('CALLS_METERED_DOMAIN', ''), // e.g. "yourapp.metered.live"
+  callsMeteredApiKey: str('CALLS_METERED_API_KEY', ''),
+  callsTwilioSid: str('CALLS_TWILIO_ACCOUNT_SID', ''),
+  callsTwilioToken: str('CALLS_TWILIO_AUTH_TOKEN', ''),
 } as const;
 
 /**

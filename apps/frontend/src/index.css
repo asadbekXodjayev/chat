@@ -1313,6 +1313,26 @@ textarea {
   pointer-events: none;
 }
 
+/* ---- Inline lucide icons: align with adjacent text, keep tick spacing ---- */
+.convrow__name svg,
+.convrow__preview svg,
+.thread__name svg,
+.meta svg,
+.composer-bar__icon svg,
+.memberpick__check svg,
+.field__hint svg {
+  vertical-align: -0.18em;
+  flex-shrink: 0;
+}
+.convrow__kind,
+.thread__kind {
+  margin-right: 4px;
+  color: var(--text-dim);
+  vertical-align: -0.18em;
+}
+.convrow__preview .tick { margin-right: 4px; }
+.drawer__item svg { flex-shrink: 0; }
+
 /* ---- NFR-6 reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
   * {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import type { ChatConversation } from '@chat/contract';
 import { Avatar } from './Avatar';
 import { createGroup, createChannel } from '../api/chat';
@@ -91,7 +92,7 @@ export function NewGroupModal({
                     >
                       <Avatar name={c.peer?.name} phone={c.peer?.phone} size={34} />
                       <span className="memberpick__name">{c.peer?.name || c.peer?.phone}</span>
-                      <span className="memberpick__check">{selected.has(c.peer_id) ? '✓' : ''}</span>
+                      <span className="memberpick__check">{selected.has(c.peer_id) && <Check size={16} aria-hidden />}</span>
                     </button>
                   ))}
                 </div>

@@ -28,13 +28,13 @@ import {
 } from '../lib/messageCache';
 
 const TOAST_PREVIEW: Record<string, string> = {
-  img: '📷 Photo',
-  video: '🎥 Video',
-  video_note: '⭕ Video note',
-  audio: '🎙 Voice message',
-  document: '📄 Document',
-  location: '📍 Location',
-  call: '📞 Call',
+  img: 'Photo',
+  video: 'Video',
+  video_note: 'Video note',
+  audio: 'Voice message',
+  document: 'Document',
+  location: 'Location',
+  call: 'Call',
 };
 
 function looksLikeMessage(o: Record<string, unknown>): boolean {

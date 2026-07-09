@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { Trash2, Send, Check, Pencil, Reply, X, Video, Mic } from 'lucide-react';
 import type { ChatMessage } from '@chat/contract';
 import { useChatTyping } from '../../../hooks/useChatTyping';
 import { useVoiceRecorder, computeWaveform } from '../../../hooks/useVoiceRecorder';
@@ -92,7 +93,7 @@ export function ChatComposerPanel({
       <div className="composer-wrap">
         <div className="composer composer--rec">
           <button className="composer__icon composer__icon--danger" onClick={() => recorder.cancel()} aria-label="Cancel recording" type="button">
-            🗑
+            <Trash2 size={20} aria-hidden />
           </button>
           <div className="rec">
             <span className="rec__dot" aria-hidden />
@@ -100,7 +101,7 @@ export function ChatComposerPanel({
             <span className="rec__hint muted">Recording…</span>
           </div>
           <button className="composer__send" onClick={() => void finishVoice()} aria-label="Send voice message" type="button">
-            ➤
+            <Send size={20} aria-hidden />
           </button>
         </div>
       </div>
@@ -111,12 +112,12 @@ export function ChatComposerPanel({
     <div className="composer-wrap">
       {mode && (
         <div className="composer-bar">
-          <span className="composer-bar__icon" aria-hidden>{mode === 'edit' ? '✎' : '↩'}</span>
+          <span className="composer-bar__icon" aria-hidden>{mode === 'edit' ? <Pencil size={18} /> : <Reply size={18} />}</span>
           <div className="composer-bar__body">
             <span className="composer-bar__title">{mode === 'edit' ? 'Edit message' : 'Reply'}</span>
             <span className="composer-bar__preview">{(editing ?? replyTo)?.body ?? ''}</span>
           </div>
-          <button className="composer-bar__close" onClick={() => { setText(''); onCancelMode?.(); }} aria-label="Cancel" type="button">×</button>
+          <button className="composer-bar__close" onClick={() => { setText(''); onCancelMode?.(); }} aria-label="Cancel" type="button"><X size={18} aria-hidden /></button>
         </div>
       )}
       <div className="composer">
@@ -138,13 +139,13 @@ export function ChatComposerPanel({
         />
         {text.trim() ? (
           <button className="composer__send" onClick={() => void submit()} disabled={sending} aria-label={mode === 'edit' ? 'Save edit' : 'Send message'}>
-            {mode === 'edit' ? '✓' : '➤'}
+            {mode === 'edit' ? <Check size={20} aria-hidden /> : <Send size={20} aria-hidden />}
           </button>
         ) : (
           <>
             {onOpenCircle && (
               <button className="composer__icon" onClick={onOpenCircle} aria-label="Record video note" type="button">
-                🎥
+                <Video size={20} aria-hidden />
               </button>
             )}
             <button
@@ -154,7 +155,7 @@ export function ChatComposerPanel({
               type="button"
               disabled={!onSendVoice}
             >
-              🎙
+              <Mic size={20} aria-hidden />
             </button>
           </>
         )}

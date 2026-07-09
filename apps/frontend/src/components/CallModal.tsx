@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react';
 import { useCallStore } from '../stores/useCallStore';
 import { CallController } from '../lib/callController';
 import { Avatar } from './Avatar';
@@ -51,24 +52,24 @@ export function CallModal() {
         {s.phase === 'incoming' ? (
           <>
             <button className="call__btn call__btn--decline" onClick={() => void CallController.decline()} type="button" aria-label="Decline">
-              ✕
+              <PhoneOff size={26} aria-hidden />
             </button>
             <button className="call__btn call__btn--accept" onClick={() => void CallController.accept()} type="button" aria-label="Accept">
-              ✓
+              <Phone size={26} aria-hidden />
             </button>
           </>
         ) : (
           <>
             <button className={`call__btn${s.muted ? ' is-on' : ''}`} onClick={() => CallController.toggleMute()} type="button" aria-pressed={s.muted} aria-label="Toggle mute">
-              {s.muted ? '🔇' : '🎙'}
+              {s.muted ? <MicOff size={24} aria-hidden /> : <Mic size={24} aria-hidden />}
             </button>
             {isVideo && (
               <button className={`call__btn${s.cameraOff ? ' is-on' : ''}`} onClick={() => CallController.toggleCamera()} type="button" aria-pressed={s.cameraOff} aria-label="Toggle camera">
-                {s.cameraOff ? '📷' : '🎥'}
+                {s.cameraOff ? <VideoOff size={24} aria-hidden /> : <Video size={24} aria-hidden />}
               </button>
             )}
             <button className="call__btn call__btn--decline" onClick={() => void CallController.hangup()} type="button" aria-label="Hang up">
-              ☎
+              <PhoneOff size={26} aria-hidden />
             </button>
           </>
         )}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { MessagesSquare } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type ChatParticipant, type ChatMessage, type ChatConversation } from '@chat/contract';
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
@@ -145,7 +146,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
           ) : (
             <div className="empty">
               <div className="empty__art" aria-hidden>
-                ✦
+                <MessagesSquare size={44} strokeWidth={1.5} />
               </div>
               <h2>Select a chat</h2>
               <p>Search a phone number to start a new conversation, or pick one on the left.</p>

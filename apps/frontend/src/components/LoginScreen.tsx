@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Check, ArrowLeft } from 'lucide-react';
 import type { ChatParticipant } from '@chat/contract';
 import { requestCode, verifyCode, register, usernameAvailable } from '../api/auth';
 import { ApiError } from '../lib/apiClient';
@@ -151,7 +152,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (u: ChatParticipant) =
 
           {step === 'code' && (
             <div className="auth__panel">
-              <button className="auth__back" onClick={() => setStep('phone')} type="button">← {phone}</button>
+              <button className="auth__back" onClick={() => setStep('phone')} type="button"><ArrowLeft size={15} aria-hidden /> {phone}</button>
               <h1 className="auth__title">Enter code</h1>
               <p className="auth__sub">
                 We sent a 6-digit code to your Telegram for <b>{phone}</b>.
@@ -195,7 +196,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: (u: ChatParticipant) =
                     autoComplete="off"
                   />
                   {uAvail === 'checking' && <span className="field__hint">…</span>}
-                  {uAvail === 'yes' && <span className="field__hint field__hint--ok">✓</span>}
+                  {uAvail === 'yes' && <span className="field__hint field__hint--ok"><Check size={16} aria-hidden /></span>}
                   {uAvail === 'no' && <span className="field__hint field__hint--bad">taken</span>}
                 </div>
               </label>

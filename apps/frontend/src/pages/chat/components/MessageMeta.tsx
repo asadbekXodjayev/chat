@@ -1,3 +1,4 @@
+import { Check, CheckCheck } from 'lucide-react';
 import type { ChatMessage } from '@chat/contract';
 import { formatMessageTime, getOwnMessageReadReceipt } from '../../../lib/format';
 
@@ -16,7 +17,7 @@ export function MessageMeta({ message, own, isNewestOwn }: { message: ChatMessag
           title={receipt}
           aria-label={`message ${receipt}`}
         >
-          {receipt === 'sent' ? '✓' : '✓✓'}
+          {receipt === 'sent' ? <Check size={14} aria-hidden /> : <CheckCheck size={14} aria-hidden />}
         </span>
       )}
     </span>

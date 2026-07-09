@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
+import { ArrowLeft, Phone, Video, Radio, Users } from 'lucide-react';
 import type { ChatConversation, ChatMessage, ChatParticipant } from '@chat/contract';
 import { useChatRealtimeStore } from '../../../stores/useChatRealtimeStore';
 import { usePeerPresence } from '../../../hooks/usePeerPresence';
@@ -71,7 +72,7 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
       <header className="thread__header">
         {onBack && (
           <button className="thread__back" onClick={onBack} aria-label="Back to chats" type="button">
-            <span aria-hidden>←</span>
+            <ArrowLeft size={22} aria-hidden />
           </button>
         )}
         <Avatar
@@ -81,7 +82,14 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
           size={40}
         />
         <div className="thread__peer">
-          <span className="thread__name">{isGroup ? `${conversation.type === 'channel' ? '📢' : '👥'} ${headerName}` : headerName}</span>
+          <span className="thread__name">
+            {isGroup && (
+              <span className="thread__kind" aria-hidden>
+                {conversation.type === 'channel' ? <Radio size={15} /> : <Users size={15} />}
+              </span>
+            )}
+            {headerName}
+          </span>
           <span className={`thread__subtitle ${!isGroup && peerTyping ? 'is-typing' : ''}`}>{headerSubtitle}</span>
         </div>
         {!isGroup && (
@@ -92,7 +100,7 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
               aria-label="Voice call"
               type="button"
             >
-              📞
+              <Phone size={20} aria-hidden />
             </button>
             <button
               className="thread__act"
@@ -100,7 +108,7 @@ export function ChatThreadPanel({ conversation, messages, me, hasOlder, loadingO
               aria-label="Video call"
               type="button"
             >
-              🎥
+              <Video size={20} aria-hidden />
             </button>
           </div>
         )}

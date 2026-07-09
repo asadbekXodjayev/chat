@@ -1,3 +1,4 @@
+import { CheckCheck, Radio, Users } from 'lucide-react';
 import type { ChatConversation, ChatParticipant } from '@chat/contract';
 import { useChatRealtimeStore } from '../../../stores/useChatRealtimeStore';
 import { conversationPreview, formatMessageTime } from '../../../lib/format';
@@ -17,7 +18,7 @@ export function ConversationItem({
   const online = useChatRealtimeStore((s) => s.isOnline(conversation.peer_id));
   const peer = conversation.peer;
   const isGroup = conversation.type === 'group' || conversation.type === 'channel';
-  const groupIcon = conversation.type === 'channel' ? '📢' : '👥';
+  const GroupIcon = conversation.type === 'channel' ? Radio : Users;
   const title = isGroup
     ? conversation.title || (conversation.type === 'channel' ? 'Channel' : 'Group')
     : peer?.name || peer?.phone || 'Unknown user';
@@ -32,12 +33,15 @@ export function ConversationItem({
       <Avatar name={isGroup ? title : peer?.name} phone={isGroup ? undefined : peer?.phone} online={isGroup ? undefined : online} />
       <div className="convrow__body">
         <div className="convrow__top">
-          <span className="convrow__name">{isGroup ? `${groupIcon} ${title}` : title}</span>
+          <span className="convrow__name">
+            {isGroup && <GroupIcon size={14} aria-hidden className="convrow__kind" />}
+            {title}
+          </span>
           {time && <span className="convrow__time">{formatMessageTime(time)}</span>}
         </div>
         <div className="convrow__bottom">
           <span className="convrow__preview">
-            {fromMe && <span className={`tick ${peerRead ? 'tick--read' : ''}`}>✓✓ </span>}
+            {fromMe && <CheckCheck size={14} aria-hidden className={`tick ${peerRead ? 'tick--read' : ''}`} />}
             {preview}
           </span>
           {unread > 0 && !active && <span className="badge">{unread > 99 ? '99+' : unread}</span>}

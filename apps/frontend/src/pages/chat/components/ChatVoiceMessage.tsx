@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { Play, Pause } from 'lucide-react';
 import type { ChatMediaPayload, ChatMessage } from '@chat/contract';
 import { apiFetchBlob } from '../../../lib/apiClient';
 
@@ -61,7 +62,7 @@ export function ChatVoiceMessage({ message, own }: { message: ChatMessage; own: 
   return (
     <div className={`voice ${own ? 'voice--own' : ''}`}>
       <button className="voice__play" onClick={toggle} aria-label={playing ? 'Pause' : 'Play voice message'} type="button" disabled={!url}>
-        {playing ? '⏸' : '▶'}
+        {playing ? <Pause size={18} aria-hidden /> : <Play size={18} aria-hidden />}
       </button>
       <div className="voice__wave" onClick={seek} role="slider" aria-label="Seek" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100} tabIndex={0}>
         {bars.map((h, i) => (

@@ -1,4 +1,21 @@
 import { Fragment, useState, type ReactNode } from 'react';
+import {
+  Image as ImageIcon,
+  Video,
+  CirclePlay,
+  Mic,
+  FileText,
+  MapPin,
+  Phone,
+  Pin,
+  Smile,
+  MoreHorizontal,
+  Reply,
+  Copy,
+  Pencil,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, type ChatMessage } from '@chat/contract';
 import { MessageMeta } from './MessageMeta';
@@ -33,15 +50,26 @@ function linkify(text: string): ReactNode[] {
   return out;
 }
 
-const MEDIA_LABEL: Record<string, string> = {
-  img: '📷 Photo',
-  video: '🎥 Video',
-  video_note: '⭕ Video note',
-  audio: '🎙 Voice message',
-  document: '📄 Document',
-  location: '📍 Location',
-  call: '📞 Call',
+const MEDIA_META: Record<string, { icon: LucideIcon; label: string }> = {
+  img: { icon: ImageIcon, label: 'Photo' },
+  video: { icon: Video, label: 'Video' },
+  video_note: { icon: CirclePlay, label: 'Video note' },
+  audio: { icon: Mic, label: 'Voice message' },
+  document: { icon: FileText, label: 'Document' },
+  location: { icon: MapPin, label: 'Location' },
+  call: { icon: Phone, label: 'Call' },
 };
+
+function MediaLabel({ type }: { type: string }) {
+  const meta = MEDIA_META[type];
+  if (!meta) return <>{`[${type}]`}</>;
+  const Icon = meta.icon;
+  return (
+    <>
+      <Icon size={15} aria-hidden /> {meta.label}
+    </>
+  );
+}
 
 const QUICK = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '👏'];
 
@@ -124,20 +152,20 @@ export function MessageBubble({ message, own, isNewestOwn, onReply, onEdit }: Pr
             <ChatVideoNoteMessage message={message} />
           ) : (
             <span className="bubble__media">
-              <span className="bubble__media-label">{MEDIA_LABEL[message.type] ?? `[${message.type}]`}</span>
+              <span className="bubble__media-label"><MediaLabel type={message.type} /></span>
               {message.body && <span className="bubble__caption">{message.body}</span>}
             </span>
           )}
-          {message.is_pinned && <span className="bubble__pin" title="Pinned">📌</span>}
+          {message.is_pinned && <span className="bubble__pin" title="Pinned"><Pin size={13} aria-hidden /></span>}
           <MessageMeta message={message} own={own} isNewestOwn={isNewestOwn} />
         </div>
 
         <div className="msg__tools">
           <button className="msg__tool" aria-label="React" onClick={() => setPickerOpen((o) => !o)} type="button">
-            🙂
+            <Smile size={17} aria-hidden />
           </button>
           <button className="msg__tool" aria-label="Message actions" onClick={() => setMenuOpen((o) => !o)} type="button">
-            ⋯
+            <MoreHorizontal size={17} aria-hidden />
           </button>
           {pickerOpen && (
             <div className="reactpop" role="menu">
@@ -152,11 +180,11 @@ export function MessageBubble({ message, own, isNewestOwn, onReply, onEdit }: Pr
             <>
               <div className="menu__backdrop" onClick={() => setMenuOpen(false)} />
               <div className="menu" role="menu">
-                <button className="menu__item" onClick={() => { setMenuOpen(false); onReply?.(message); }} type="button">↩ Reply</button>
-                {isText && <button className="menu__item" onClick={doCopy} type="button">⧉ Copy</button>}
-                <button className="menu__item" onClick={doPin} type="button">📌 {message.is_pinned ? 'Unpin' : 'Pin'}</button>
-                {canEdit && <button className="menu__item" onClick={() => { setMenuOpen(false); onEdit?.(message); }} type="button">✎ Edit</button>}
-                {own && <button className="menu__item menu__item--danger" onClick={doDelete} type="button">🗑 Delete</button>}
+                <button className="menu__item" onClick={() => { setMenuOpen(false); onReply?.(message); }} type="button"><Reply size={16} aria-hidden /> Reply</button>
+                {isText && <button className="menu__item" onClick={doCopy} type="button"><Copy size={16} aria-hidden /> Copy</button>}
+                <button className="menu__item" onClick={doPin} type="button"><Pin size={16} aria-hidden /> {message.is_pinned ? 'Unpin' : 'Pin'}</button>
+                {canEdit && <button className="menu__item" onClick={() => { setMenuOpen(false); onEdit?.(message); }} type="button"><Pencil size={16} aria-hidden /> Edit</button>}
+                {own && <button className="menu__item menu__item--danger" onClick={doDelete} type="button"><Trash2 size={16} aria-hidden /> Delete</button>}
               </div>
             </>
           )}

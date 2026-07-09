@@ -142,22 +142,72 @@ export const CallService = {
     }
   },
 
-  // §11.2 / §11.7 — fresh ICE per call; short-lived TURN creds via HMAC if a secret is set.
-  iceServers(): CallIceServer[] {
-    const stun = env.callsIceUrls.filter((u) => u.startsWith('stun:'));
-    const turn = env.callsIceUrls.filter((u) => u.startsWith('turn:') || u.startsWith('turns:'));
-    const servers: CallIceServer[] = [];
-    if (stun.length) servers.push({ urls: stun });
-    if (turn.length) {
-      if (env.callsTurnSecret) {
-        const username = String(Math.floor(Date.now() / 1000) + 3600);
-        const credential = createHmac('sha1', env.callsTurnSecret).update(username).digest('base64');
-        servers.push({ urls: turn, username, credential });
-      } else {
-        servers.push({ urls: turn });
-      }
+  // §11.2 / §11.7 — ICE config. Prefers a hosted TURN provider (Metered → Twilio) so calls
+  // traverse symmetric NAT; falls back to the static CALLS_ICE_URLS + HMAC-TURN config, then STUN.
+  async iceServers(): Promise<CallIceServer[]> {
+    const now = Date.now();
+    if (iceCache && iceCache.expires > now) return iceCache.servers;
+
+    let servers: CallIceServer[] | null = null;
+    try {
+      if (env.callsMeteredDomain && env.callsMeteredApiKey) servers = await fetchMeteredServers();
+      else if (env.callsTwilioSid && env.callsTwilioToken) servers = await fetchTwilioServers();
+    } catch {
+      servers = null; // provider hiccup → fall back rather than fail the call
     }
-    if (servers.length === 0) servers.push({ urls: ['stun:stun.l.google.com:19302'] });
+    if (!servers || servers.length === 0) servers = staticIceServers();
+
+    iceCache = { servers, expires: now + 5 * 60_000 }; // provider creds are long-lived; 5-min cache
     return servers;
   },
 };
+
+// ---- ICE server resolution ----
+
+let iceCache: { servers: CallIceServer[]; expires: number } | null = null;
+
+// Static ICE from CALLS_ICE_URLS (+ optional HMAC-signed TURN); STUN-only as the last resort.
+function staticIceServers(): CallIceServer[] {
+  const stun = env.callsIceUrls.filter((u) => u.startsWith('stun:'));
+  const turn = env.callsIceUrls.filter((u) => u.startsWith('turn:') || u.startsWith('turns:'));
+  const servers: CallIceServer[] = [];
+  if (stun.length) servers.push({ urls: stun });
+  if (turn.length) {
+    if (env.callsTurnSecret) {
+      const username = String(Math.floor(Date.now() / 1000) + 3600);
+      const credential = createHmac('sha1', env.callsTurnSecret).update(username).digest('base64');
+      servers.push({ urls: turn, username, credential });
+    } else {
+      servers.push({ urls: turn });
+    }
+  }
+  if (servers.length === 0) servers.push({ urls: ['stun:stun.l.google.com:19302'] });
+  return servers;
+}
+
+// Metered: GET /api/v1/turn/credentials → array of RTCIceServer-shaped objects.
+async function fetchMeteredServers(): Promise<CallIceServer[] | null> {
+  const url = `https://${env.callsMeteredDomain}/api/v1/turn/credentials?apiKey=${encodeURIComponent(env.callsMeteredApiKey)}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = (await res.json()) as unknown;
+  return Array.isArray(data) ? (data as CallIceServer[]) : null;
+}
+
+// Twilio Network Traversal Service: POST /Tokens.json → { ice_servers: [{ urls|url, username, credential }] }.
+async function fetchTwilioServers(): Promise<CallIceServer[] | null> {
+  const auth = Buffer.from(`${env.callsTwilioSid}:${env.callsTwilioToken}`).toString('base64');
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.callsTwilioSid}/Tokens.json`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${auth}` },
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { ice_servers?: { url?: string; urls?: string; username?: string; credential?: string }[] };
+  const servers: CallIceServer[] = [];
+  for (const s of data.ice_servers ?? []) {
+    const urls = s.urls ?? s.url;
+    if (!urls) continue;
+    servers.push({ urls, username: s.username ?? null, credential: s.credential ?? null });
+  }
+  return servers;
+}

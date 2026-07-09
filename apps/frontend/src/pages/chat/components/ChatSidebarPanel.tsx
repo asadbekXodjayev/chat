@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys, type ChatConversation, type ChatParticipant } from '@chat/contract';
 import { userFinder } from '../../../api/chat';
@@ -51,7 +52,7 @@ export function ChatSidebarPanel({ me, conversations, loading, activeId, onSelec
     <aside className="sidebar">
       <div className="sidebar__top">
         <button className="sidebar__burger" onClick={onBurger} aria-label="Open menu" type="button">
-          <span aria-hidden>☰</span>
+          <Menu size={22} aria-hidden />
         </button>
         <div className="sidebar__search">
           <input

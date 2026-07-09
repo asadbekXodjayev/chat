@@ -25,8 +25,54 @@ let pendingIce: RTCIceCandidateInit[] = [];
 let currentCallId: string | null = null;
 let isCaller = false;
 let unsub: (() => void) | null = null;
+let connectTimer: number | null = null;
+let restarted = false; // caller has already spent its one ICE-restart attempt
+let recovering = false; // an ICE failure is being handled — swallow duplicate failure events
 
 const S = () => useCallStore.getState();
+const CONNECT_TIMEOUT_MS = 35_000; // §7.8 — if ICE can't establish in time, surface a failure.
+
+function clearConnectTimer(): void {
+  if (connectTimer !== null) {
+    window.clearTimeout(connectTimer);
+    connectTimer = null;
+  }
+}
+
+// Give ICE a bounded window to connect; otherwise the user is stuck on "Connecting…" forever.
+function armConnectTimer(): void {
+  clearConnectTimer();
+  connectTimer = window.setTimeout(() => {
+    if (S().phase !== 'connected') {
+      S().set({ errorMsg: 'Could not connect — check your network or try again.' });
+      teardown();
+    }
+  }, CONNECT_TIMEOUT_MS);
+}
+
+// ICE dropped. Re-entrant-safe: the caller re-offers with an ICE restart once, the callee waits for
+// it, and both give the connection a bounded window to recover before tearing down. `recovering`
+// swallows the duplicate 'failed' event that connectionState + iceConnectionState both emit.
+function handleIceFailure(): void {
+  if (recovering || !pc || S().phase === 'ended') return;
+  recovering = true;
+  S().set({ phase: 'connecting' }); // show "Connecting…" so the connect-timer guard is valid
+  armConnectTimer(); // bounded recovery window → teardown if we don't reconnect
+  if (isCaller && !restarted && currentCallId) {
+    restarted = true;
+    void (async () => {
+      try {
+        const offer = await pc!.createOffer({ iceRestart: true });
+        await pc!.setLocalDescription(offer);
+        sendWsFrame({ type: WS_SIGNAL_OFFER, data: { call_id: currentCallId!, payload: { type: offer.type, sdp: offer.sdp } } });
+      } catch {
+        S().set({ errorMsg: 'Connection lost.' });
+        teardown();
+      }
+    })();
+  }
+  // Callee (or a caller out of restart attempts) simply waits out the connect timer.
+}
 
 async function iceServers(): Promise<RTCIceServer[]> {
   try {
@@ -50,10 +96,35 @@ async function setupPc(callType: CallType): Promise<void> {
     if (stream) S().set({ remoteStream: stream });
   };
   pc.onconnectionstatechange = () => {
-    if (pc?.connectionState === 'connected') S().set({ phase: 'connected' });
-    else if (pc?.connectionState === 'failed') teardown();
+    const st = pc?.connectionState;
+    if (st === 'connected') {
+      clearConnectTimer();
+      recovering = false;
+      S().set({ phase: 'connected', errorMsg: null });
+    } else if (st === 'failed') {
+      handleIceFailure();
+    }
   };
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+  pc.oniceconnectionstatechange = () => {
+    const st = pc?.iceConnectionState;
+    if (st === 'failed') handleIceFailure();
+    else if (st === 'connected' || st === 'completed') recovering = false;
+  };
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('Camera & microphone need a secure (https) connection.');
+  }
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+  } catch (err) {
+    const name = (err as DOMException)?.name;
+    throw new Error(
+      name === 'NotAllowedError' || name === 'SecurityError'
+        ? 'Camera/microphone permission denied.'
+        : name === 'NotFoundError' || name === 'DevicesNotFoundError'
+          ? 'No camera or microphone found.'
+          : 'Could not access camera/microphone.',
+    );
+  }
   S().set({ localStream });
   for (const track of localStream.getTracks()) pc.addTrack(track, localStream);
 }
@@ -74,6 +145,9 @@ function teardown(): void {
   pendingIce = [];
   currentCallId = null;
   isCaller = false;
+  restarted = false;
+  recovering = false;
+  clearConnectTimer();
   S().set({ phase: 'ended', localStream: null, remoteStream: null });
   window.setTimeout(() => {
     if (S().phase === 'ended') S().reset();
@@ -99,6 +173,7 @@ async function handleFrame(f: CallFrame): Promise<void> {
     const d = f.data as unknown as WsCallLifecycleData;
     if (d.call.id !== currentCallId) return;
     S().set({ phase: 'connecting', call: d.call });
+    armConnectTimer();
     if (isCaller) {
       await setupPc(S().callType);
       const offer = await pc!.createOffer();
@@ -140,7 +215,14 @@ async function handleFrame(f: CallFrame): Promise<void> {
 
 export const CallController = {
   init(): void {
-    if (!unsub) unsub = onCallFrame((f) => void handleFrame(f).catch(() => teardown()));
+    if (!unsub)
+      unsub = onCallFrame(
+        (f) =>
+          void handleFrame(f).catch((e) => {
+            S().set({ errorMsg: e instanceof Error ? e.message : 'Call error' });
+            teardown();
+          }),
+      );
   },
 
   async startCall(peerId: string, peerName: string | null, peerPhone: string | null, callType: CallType): Promise<void> {

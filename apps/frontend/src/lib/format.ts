@@ -36,14 +36,15 @@ export function initials(name: string | null | undefined, phone?: string | null)
   return parts.map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
-const TYPE_ICON: Partial<Record<ChatMessageType, string>> = {
-  img: '📷 Photo',
-  video: '🎥 Video',
-  video_note: '⭕ Video note',
-  audio: '🎙 Voice message',
-  document: '📄 Document',
-  location: '📍 Location',
-  call: '📞 Call',
+// Plain-text labels for the sidebar preview line (a pure string context — no room for JSX icons).
+const TYPE_LABEL: Partial<Record<ChatMessageType, string>> = {
+  img: 'Photo',
+  video: 'Video',
+  video_note: 'Video note',
+  audio: 'Voice message',
+  document: 'Document',
+  location: 'Location',
+  call: 'Call',
 };
 
 /** §12.1 FR-6 — sidebar preview priority. */
@@ -55,7 +56,7 @@ export function conversationPreview(c: ChatConversation, myId: string): string {
   const summary = c.summary_preview ?? last?.body;
   if (summary) return prefix + summary;
   const type = c.summary_last_message_type ?? last?.type;
-  if (type && TYPE_ICON[type]) return prefix + TYPE_ICON[type];
+  if (type && TYPE_LABEL[type]) return prefix + TYPE_LABEL[type];
   return type ? `${prefix}[${type}]` : '';
 }
 
