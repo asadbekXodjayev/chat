@@ -92,6 +92,16 @@ export function sendCircle(
   fd.append('height', String(size));
   return apiRequest(v1(chatEndpoints.sendMedia(conversationId)), { method: 'POST', form: fd });
 }
+/** Send an image or arbitrary document. Images (image/*) become `img`, everything else `document`. */
+export function sendFile(conversationId: string, file: File, caption?: string): Promise<ChatMessage> {
+  const isImage = file.type.startsWith('image/');
+  const fd = new FormData();
+  fd.append('type', isImage ? 'img' : 'document');
+  fd.append('file', file, file.name);
+  fd.append('filename', file.name);
+  if (caption && caption.trim()) fd.append('body', caption.trim());
+  return apiRequest(v1(chatEndpoints.sendMedia(conversationId)), { method: 'POST', form: fd });
+}
 export function editMessage(messageId: string, body: string): Promise<ChatMessage> {
   return apiRequest(v1(chatEndpoints.editMessage(messageId)), { method: 'PATCH', body: { body } });
 }

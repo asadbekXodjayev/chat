@@ -62,8 +62,9 @@ export const env = {
   telegramGatewaySender: str('TELEGRAM_GATEWAY_SENDER', 'Verification Codes'),
 
   mediaStorageDir: str('MEDIA_STORAGE_DIR', './.storage'),
-  mediaMaxBytes: int('MEDIA_MAX_BYTES', 52_428_800),
-  docMaxBytes: int('DOC_MAX_BYTES', 20_971_520),
+  // Single hard ceiling for any upload (§6.6). Default 100 MB; shared with the FE via
+  // @chat/contract MAX_UPLOAD_BYTES for a matching client-side pre-check.
+  maxUploadBytes: int('MAX_UPLOAD_BYTES', 104_857_600),
 
   rlSendPerSec: int('RL_SEND_PER_SEC', 10),
   rlUploadPerMin: int('RL_UPLOAD_PER_MIN', 5),

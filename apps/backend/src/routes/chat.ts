@@ -41,7 +41,8 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
   // #1 user-finder
   app.get('/v1/chat/user-finder', async (req, reply) => {
-    requireUserId(req);
+    const userId = requireUserId(req);
+    await rateLimit(userId, 'finder', 40, 60); // discovery: 40/min
     const q = req.query as { phone?: string; limit?: string };
     const phone = (q.phone ?? '').trim();
     if (phone.length < 3) return sendOk(reply, { items: [] }, { language: req.language });
@@ -75,6 +76,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
   // #4b create group
   app.post('/v1/chat/groups', async (req, reply) => {
     const userId = requireUserId(req);
+    await rateLimit(userId, 'create_conv', 15, 60); // creation: 15/min
     const body = (req.body ?? {}) as { title?: string; member_ids?: string[]; description?: string };
     const title = (body.title ?? '').trim();
     if (title.length < 1 || title.length > 128) throw new ApiError(400, 'invalid_payload_detail');
@@ -89,6 +91,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
   // #4c create channel
   app.post('/v1/chat/channels', async (req, reply) => {
     const userId = requireUserId(req);
+    await rateLimit(userId, 'create_conv', 15, 60); // creation: 15/min
     const body = (req.body ?? {}) as { title?: string; description?: string; is_public?: boolean };
     const title = (body.title ?? '').trim();
     if (title.length < 1 || title.length > 128) throw new ApiError(400, 'invalid_payload_detail');
@@ -266,6 +269,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
   // #11 edit
   app.patch('/v1/chat/messages/:id', async (req, reply) => {
     const userId = requireUserId(req);
+    await rateLimit(userId, 'send', env.rlSendPerSec, 1); // shares the send budget
     const row = await MessageService.getById((req.params as { id: string }).id);
     if (!row) throw new ApiError(404, 'message_not_found');
     if (row.sender_id !== userId) throw new ApiError(403, 'forbidden');
@@ -295,6 +299,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
   app.put('/v1/chat/messages/:id/reactions', async (req, reply) => {
     const userId = requireUserId(req);
+    await rateLimit(userId, 'react', 60, 60); // reactions: 60/min
     const row = await MessageService.getById((req.params as { id: string }).id);
     if (!row || row.deleted_at) throw new ApiError(404, 'message_not_found');
     const conv = await loadConversationForMember(row.conversation_id, userId);

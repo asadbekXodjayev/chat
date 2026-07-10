@@ -15,7 +15,7 @@ import { attachWebSocketGateway, localConnectionCount } from './ws/gateway';
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.isProd ? 'info' : 'debug' },
-    bodyLimit: env.mediaMaxBytes + 1_048_576,
+    bodyLimit: env.maxUploadBytes + 1_048_576,
   });
 
   await app.register(cors, {
@@ -32,7 +32,7 @@ export async function buildServer(): Promise<FastifyInstance> {
       'X-User-ID',
     ],
   });
-  await app.register(multipart, { limits: { fileSize: env.mediaMaxBytes } });
+  await app.register(multipart, { limits: { fileSize: env.maxUploadBytes } });
 
   attachRequestContext(app);
 

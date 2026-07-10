@@ -21,6 +21,8 @@ import { queryKeys, type ChatMessage } from '@chat/contract';
 import { MessageMeta } from './MessageMeta';
 import { ChatVoiceMessage } from './ChatVoiceMessage';
 import { ChatVideoNoteMessage } from './ChatVideoNoteMessage';
+import { ChatImageMessage } from './ChatImageMessage';
+import { ChatFileMessage } from './ChatFileMessage';
 import { toggleReaction, deleteMessage, pinMessage } from '../../../api/chat';
 import { upsertMessage, type MessagesInfinite } from '../../../lib/messageCache';
 
@@ -150,6 +152,10 @@ export function MessageBubble({ message, own, isNewestOwn, onReply, onEdit }: Pr
             <ChatVoiceMessage message={message} own={own} />
           ) : message.type === 'video_note' ? (
             <ChatVideoNoteMessage message={message} />
+          ) : message.type === 'img' ? (
+            <ChatImageMessage message={message} />
+          ) : message.type === 'document' ? (
+            <ChatFileMessage message={message} />
           ) : (
             <span className="bubble__media">
               <span className="bubble__media-label"><MediaLabel type={message.type} /></span>

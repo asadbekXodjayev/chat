@@ -116,8 +116,7 @@ export const MediaService = {
     kind: string,
     meta: { duration_ms?: number | null; width?: number | null; height?: number | null } = {},
   ): Promise<AttachmentRow> {
-    const maxBytes = kind === 'document' ? env.docMaxBytes : env.mediaMaxBytes;
-    if (buffer.byteLength > maxBytes) throw new ApiError(413, 'file_too_large');
+    if (buffer.byteLength > env.maxUploadBytes) throw new ApiError(413, 'file_too_large');
     if (!isMimeAllowed(mime)) throw new ApiError(415, 'unsupported_media_type');
 
     const sha256 = createHash('sha256').update(buffer).digest('hex');

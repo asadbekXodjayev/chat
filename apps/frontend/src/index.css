@@ -25,33 +25,39 @@
    matches neither, so it keeps the :root light defaults. (§7.3) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #0c0f14;
-    --surface: #151a21;
-    --surface-2: #1c222b;
-    --border: #262d38;
-    --text: #e6e9ee;
-    --text-dim: #93a0b4;
-    --accent: #10b981;
-    --own-bubble: #17493a;
-    --own-ink: #e6f6ef;
-    --peer-bubble: #1c222b;
-    --peer-ink: #e6e9ee;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    /* Telegram Desktop "Night" palette */
+    --bg: #0e1621;
+    --surface: #17212b;
+    --surface-2: #242f3d;
+    --border: #101921;
+    --text: #ffffff;
+    --text-dim: #7f91a4;
+    --accent: #3390ec;
+    --accent-ink: #ffffff;
+    --own-bubble: #2b5278;
+    --own-ink: #ffffff;
+    --peer-bubble: #182533;
+    --peer-ink: #ffffff;
+    --tick-read: #60b1ef;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
   }
 }
 :root[data-theme='dark'] {
-  --bg: #0c0f14;
-  --surface: #151a21;
-  --surface-2: #1c222b;
-  --border: #262d38;
-  --text: #e6e9ee;
-  --text-dim: #93a0b4;
-  --accent: #10b981;
-  --own-bubble: #17493a;
-  --own-ink: #e6f6ef;
-  --peer-bubble: #1c222b;
-  --peer-ink: #e6e9ee;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* Telegram Desktop "Night" palette */
+  --bg: #0e1621;
+  --surface: #17212b;
+  --surface-2: #242f3d;
+  --border: #101921;
+  --text: #ffffff;
+  --text-dim: #7f91a4;
+  --accent: #3390ec;
+  --accent-ink: #ffffff;
+  --own-bubble: #2b5278;
+  --own-ink: #ffffff;
+  --peer-bubble: #182533;
+  --peer-ink: #ffffff;
+  --tick-read: #60b1ef;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -1332,6 +1338,131 @@ textarea {
 }
 .convrow__preview .tick { margin-right: 4px; }
 .drawer__item svg { flex-shrink: 0; }
+
+/* ---- Attachments: composer pending-file bar + error ---- */
+.composer-bar--attach { align-items: center; }
+.composer-bar__thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--surface-2);
+  color: var(--accent);
+}
+.composer-bar__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.composer-error {
+  margin: 6px 16px 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+/* ---- Image message bubble ---- */
+.img-msg { display: flex; flex-direction: column; gap: 6px; }
+.img-msg__frame {
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+}
+.img-msg__img {
+  display: block;
+  max-width: min(320px, 68vw);
+  max-height: 380px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.img-msg__ph {
+  width: min(240px, 60vw);
+  height: 180px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.img-msg__fail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+.img-msg__fail svg { vertical-align: -0.18em; }
+
+/* ---- Lightbox (full-screen image viewer) ---- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(6, 10, 18, 0.9);
+  cursor: zoom-out;
+}
+.lightbox__img {
+  max-width: 96vw;
+  max-height: 92vh;
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- File / document download card (Telegram: circular icon, sits on the bubble) ---- */
+.file-msg { display: flex; flex-direction: column; gap: 6px; }
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px 2px 2px;
+  min-width: 180px;
+  max-width: 280px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.file-card:disabled { opacity: 0.6; cursor: default; }
+.file-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.file-card:hover .file-card__icon { background: rgba(255, 255, 255, 0.24); }
+.file-card__body { display: flex; flex-direction: column; min-width: 0; }
+.file-card__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- NFR-6 reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {

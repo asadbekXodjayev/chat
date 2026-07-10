@@ -5,7 +5,7 @@ import { queryKeys, type ChatParticipant, type ChatMessage, type ChatConversatio
 import { useChatWebSocket } from '../../hooks/useChatWebSocket';
 import { useConversationsQuery, useMessagesQuery } from '../../hooks/useChatQueries';
 import { useChatRealtimeStore } from '../../stores/useChatRealtimeStore';
-import { sendText, editMessage, sendVoice, sendCircle, getOrCreateConversation } from '../../api/chat';
+import { sendText, editMessage, sendVoice, sendCircle, sendFile, getOrCreateConversation } from '../../api/chat';
 import { ChatVideoNoteRecorder } from './components/ChatVideoNoteRecorder';
 import { CallModal } from '../../components/CallModal';
 import { CallController } from '../../lib/callController';
@@ -96,6 +96,13 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
     void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
   };
 
+  const handleSendFile = async (file: File, caption: string) => {
+    if (!active) return;
+    const msg = await sendFile(active.id, file, caption);
+    qc.setQueryData(queryKeys.messages(active.id), (old: MessagesInfinite | undefined) => upsertMessage(old, msg));
+    void qc.invalidateQueries({ queryKey: queryKeys.conversations() });
+  };
+
   const logout = () => {
     clearSession();
     onLogout();
@@ -137,6 +144,7 @@ export function ChatPage({ me: meInitial, onLogout }: { me: ChatParticipant; onL
                 conversationId={active.id}
                 onSend={handleSubmit}
                 onSendVoice={handleSendVoice}
+                onSendFile={handleSendFile}
                 onOpenCircle={() => setCircleOpen(true)}
                 replyTo={composerMode?.kind === 'reply' ? composerMode.message : null}
                 editing={composerMode?.kind === 'edit' ? composerMode.message : null}

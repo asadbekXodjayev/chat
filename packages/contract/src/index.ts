@@ -5,6 +5,7 @@ export * from './profile.js';
 export * from './reactions.js';
 export * from './messageType.js';
 export * from './messages.js';
+export * from './limits.js';
 export * from './conversations.js';
 export * from './presence.js';
 export * from './calls.js';
